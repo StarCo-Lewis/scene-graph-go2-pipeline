@@ -1,0 +1,22 @@
+{
+  "schema_version": "single_navigation_replay_v1",
+  "engineering_plan": "outputs/real_scene_runs/d3_619_plan_20261022_132214_282023/engineering_plan.json",
+  "engineering_plan_sha256": "d3758965e0a46c7c0b5fdeb201df580a7678bf20a1bbe4a7d81b835752078115",
+  "scene_graph": "outputs/real_scene_runs/d3_619_graph_20261022_094742_334872/scene/scene_graph.json",
+  "scene_edges": "outputs/real_scene_runs/d3_619_graph_20261022_094742_334872/scene/scene_graph_edges.json",
+  "coordinate_frame": "d3_619_slam_world_x_forward_y_left_z_up_m",
+  "angle_unit": "radian",
+  "target_element_id": 179,
+  "start_pose": {"x": null, "y": null, "yaw": null},
+  "approach_pose": {"x": null, "y": null, "yaw": null},
+  "limits": {"pos_tol": null, "yaw_tol": null, "timeout": null, "max_speed": null},
+  "ros_environment": {"ROS_DOMAIN_ID": "7", "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp"},
+  "confirmations": {
+    "initial_pose_measured": false,
+    "scene_frame_verified": false,
+    "approach_pose_verified": false,
+    "navigation_limits_verified": false,
+    "operator_and_estop_ready": false,
+    "server_alignment_policy_reviewed": false
+  }
+}

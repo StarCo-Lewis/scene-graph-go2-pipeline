@@ -1,0 +1,10 @@
+{
+  "schema_version": "real_scene_import_v1",
+  "scene_id": "synthetic_demo_not_for_robot",
+  "coordinate_frame": "d3_619_slam_world_x_forward_y_left_z_up_m",
+  "unit": "metre",
+  "up_axis": "z",
+  "node_count": 2,
+  "edge_count": 0,
+  "provenance": "Synthetic schema fixture only; not observed or registered to any robot"
+}

@@ -1,0 +1,3047 @@
+{
+  "schema_version": "1.0",
+  "library_id": "quadruped_lift_arm_atomic_skills",
+  "version": "0.2.0",
+  "status": "draft_for_offline_alignment",
+  "robot_profile": {
+    "platform": "quadruped_mobile_manipulator",
+    "capabilities": [
+      "quadruped_locomotion",
+      "body_height_adjustment",
+      "liftable_robotic_arm",
+      "single_gripper",
+      "rgbd_perception"
+    ],
+    "constraints": {
+      "max_held_objects": 1,
+      "requires_free_gripper_for_grasp": true,
+      "requires_stable_base_for_manipulation": true
+    }
+  },
+  "design_principles": {
+    "planning_level": "symbolic_atomic_action",
+    "atomicity_rule": "Each skill should express one independently verifiable state transition and should not expose joint-level control.",
+    "closed_world_skills": true,
+    "closed_world_scene_elements": true,
+    "unmatched_policy": "Return unresolved instead of inventing a skill or scene element.",
+    "context_binding_policy": "A task-level role keeps the same scene element binding across all dependent steps unless an explicit rebind operation is requested."
+  },
+  "parameter_types": {
+    "scene_element": "An element_id that must exist in the ConceptGraphs scene graph.",
+    "location": "A navigable place, room, waypoint, or pose grounded in the scene graph.",
+    "surface": "A scene element with support_surface affordance.",
+    "container": "A scene element with container affordance.",
+    "person": "A person or recipient grounded in the scene graph.",
+    "control": "A button, switch, handle, or other controllable scene element.",
+    "height_m": "A numeric body or arm height in metres within robot limits.",
+    "number": "A finite numeric value whose unit is defined by the parameter name.",
+    "vector_or_symbolic_direction": "A normalized vector or a symbolic direction grounded in the robot or world frame.",
+    "semantic_content": "A semantic content label such as water; it must be supported by observed or declared state.",
+    "semantic_property": "The object state or property requested for inspection.",
+    "reference_frame": "Identifier of a supplied, verified coordinate frame. Do not infer missing transforms.",
+    "hand_selector": "Configured hand/manipulator identifier. Caller must resolve ambiguity and availability.",
+    "pose_reference": "Reference to an explicitly supplied target pose including orientation. No invented coordinates.",
+    "state_reference": "Reference to a calibrated initial configuration, not an assumed all-zero state.",
+    "component_selector": "Explicit manipulation component identifier; the list does not define its reset scope.",
+    "contact_constraint_reference": "Reference to supplied contact mode, force/torque limits and termination conditions.",
+    "trajectory_reference": "Reference to a supplied direction/path/axis and displacement or angle, in a verified frame."
+  },
+  "predicate_vocabulary": [
+    "exists",
+    "visible",
+    "localized",
+    "navigable",
+    "near",
+    "reachable",
+    "graspable",
+    "held_by",
+    "gripper_empty",
+    "stable_base",
+    "on",
+    "in",
+    "open",
+    "closed",
+    "openable",
+    "contains",
+    "activated",
+    "body_height",
+    "arm_height",
+    "inspected",
+    "motion_limits_verified",
+    "motion_completed",
+    "heading_changed",
+    "lifted",
+    "selected_hand_available",
+    "held_by_selected_hand",
+    "support_or_receiver_verified",
+    "at_requested_pose",
+    "lower_body_at_reference",
+    "upper_body_at_reference",
+    "at_reference_state",
+    "support_verified",
+    "holding_or_fixation_verified",
+    "holding_constraint_maintained",
+    "free_space_path_verified",
+    "released_by_selected_hand",
+    "contact_mode_verified",
+    "contact_motion_completed",
+    "surface_path_traversed"
+  ],
+  "skills": [
+    {
+      "skill_id": "navigate_to_object",
+      "name": "NavigateToObject",
+      "description_en": "Move to an operational position near the specified scene object.",
+      "category": "navigation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "standoff_m",
+          "type": "number",
+          "required": false,
+          "default": 0.6
+        }
+      ],
+      "required_affordances": {
+        "target": []
+      },
+      "preconditions": [
+        {
+          "subject": "$target",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "localized",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "navigable",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "navigate_to_location",
+      "name": "NavigateToLocation",
+      "description_en": "Move to a room, region, waypoint, or target pose grounded in the scene graph.",
+      "category": "navigation",
+      "parameters": [
+        {
+          "name": "destination",
+          "type": "location",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "destination": [
+          "navigable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$destination",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "$destination",
+          "predicate": "navigable",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$destination"
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "adjust_body_height",
+      "name": "AdjustBodyHeight",
+      "description_en": "Raise or lower the quadruped body to bring the arm into an appropriate operating height range.",
+      "category": "whole_body_positioning",
+      "parameters": [
+        {
+          "name": "height",
+          "type": "height_m",
+          "required": true
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "body_height",
+          "value_from": "$height"
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "position_arm_for_object",
+      "name": "PositionArmForObject",
+      "description_en": "Adjust the arm height and end-effector pose so the gripper can reach the specified object.",
+      "category": "arm_positioning",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": []
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "localized",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[3]",
+          "label_zh": "打开抽屉",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "grasp_object",
+      "name": "GraspObject",
+      "description_en": "Use the gripper to grasp a graspable object.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": [
+          "graspable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$target",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "graspable",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": false
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[12]/paragraph",
+          "label_zh": "夹取抓取",
+          "match": "existing_semantic_mapping"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[1]/paragraph",
+          "label_zh": "物体抓取",
+          "match": "existing_semantic_mapping"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[1]",
+          "label_zh": "杯子放入托盘",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[3]",
+          "label_zh": "打开抽屉",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[4]",
+          "label_zh": "打开柜门",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[5]",
+          "label_zh": "旋开瓶盖",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[6]",
+          "label_zh": "插入零件",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[7]",
+          "label_zh": "拿工具按指定方向使用",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[8]",
+          "label_zh": "擦拭桌面",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[9]",
+          "label_zh": "双手交接",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "lift_held_object",
+      "name": "LiftHeldObject",
+      "description_en": "Lift the grasped object in the gripper away from its original support surface or container.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "object": [
+          "graspable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "on",
+          "object": null
+        },
+        {
+          "subject": "$object",
+          "predicate": "in",
+          "object": null
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[1]",
+          "label_zh": "杯子放入托盘",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[8]",
+          "label_zh": "擦拭桌面",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "place_object_on_surface",
+      "name": "PlaceObjectOnSurface",
+      "description_en": "Place the currently held object stably onto the specified support surface and release it.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "surface",
+          "type": "surface",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "object": [
+          "graspable"
+        ],
+        "surface": [
+          "support_surface"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$surface"
+        },
+        {
+          "subject": "$surface",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "on",
+          "object": "$surface"
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": null
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[13]/paragraph",
+          "label_zh": "打开放置",
+          "match": "existing_semantic_mapping"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[2]/paragraph",
+          "label_zh": "物体放置",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[8]",
+          "label_zh": "擦拭桌面",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "place_object_in_container",
+      "name": "PlaceObjectInContainer",
+      "description_en": "Place the currently held object into the specified container and release it.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "container",
+          "type": "container",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "object": [
+          "graspable"
+        ],
+        "container": [
+          "container"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$container"
+        },
+        {
+          "subject": "$container",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "any_of": [
+            {
+              "subject": "$container",
+              "predicate": "openable",
+              "value": false
+            },
+            {
+              "subject": "$container",
+              "predicate": "open",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "in",
+          "object": "$container"
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": null
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[13]/paragraph",
+          "label_zh": "打开放置",
+          "match": "existing_semantic_mapping"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[2]/paragraph",
+          "label_zh": "物体放置",
+          "match": "new_or_extended_definition"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "release_object",
+      "name": "ReleaseObject",
+      "description_en": "Release the currently held object after safe contact or a receiving relationship has been established.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "object": []
+      },
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": null
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "safety_note": "Do not select this skill alone when the post-release support relation is unknown. Prefer a place or handover skill.",
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[13]/paragraph",
+          "label_zh": "打开放置",
+          "match": "existing_semantic_mapping"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "open_articulated_object",
+      "name": "OpenArticulatedObject",
+      "description_en": "Open a door, drawer, or container with a handle or operable joint.",
+      "category": "articulated_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": [
+          "openable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "closed",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "open",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "closed",
+          "value": false
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[3]",
+          "label_zh": "打开抽屉",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[4]",
+          "label_zh": "打开柜门",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "close_articulated_object",
+      "name": "CloseArticulatedObject",
+      "description_en": "Close a door, drawer, or container with a handle or operable joint.",
+      "category": "articulated_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": [
+          "openable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "open",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "closed",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "open",
+          "value": false
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "push_object",
+      "name": "PushObject",
+      "description_en": "Push a pushable object along the specified direction and distance.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "direction",
+          "type": "vector_or_symbolic_direction",
+          "required": true
+        },
+        {
+          "name": "distance_m",
+          "type": "number",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": [
+          "pushable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "localized",
+          "value": true,
+          "update": "pose_shifted_by_direction_and_distance"
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[14]/paragraph",
+          "label_zh": "推动",
+          "match": "existing_semantic_mapping"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[8]/paragraph",
+          "label_zh": "接触约束平移",
+          "match": "new_or_extended_definition"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "pull_object",
+      "name": "PullObject",
+      "description_en": "Pull a pullable object along the specified direction and distance.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "direction",
+          "type": "vector_or_symbolic_direction",
+          "required": true
+        },
+        {
+          "name": "distance_m",
+          "type": "number",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "target": [
+          "pullable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "$target",
+          "predicate": "reachable",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "localized",
+          "value": true,
+          "update": "pose_shifted_by_direction_and_distance"
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[8]/paragraph",
+          "label_zh": "接触约束平移",
+          "match": "new_or_extended_definition"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "press_control",
+      "name": "PressControl",
+      "description_en": "Press a button or toggle an activatable control component.",
+      "category": "device_interaction",
+      "parameters": [
+        {
+          "name": "control",
+          "type": "control",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "control": [
+          "pressable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$control"
+        },
+        {
+          "subject": "$control",
+          "predicate": "reachable",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$control",
+          "predicate": "activated",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[8]/paragraph",
+          "label_zh": "接触约束平移",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[2]",
+          "label_zh": "按下按钮",
+          "match": "composite_template"
+        }
+      ],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "pour_into_container",
+      "name": "PourIntoContainer",
+      "description_en": "Pour the contents of the currently held source container into the target container.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "source",
+          "type": "container",
+          "required": true
+        },
+        {
+          "name": "target_container",
+          "type": "container",
+          "required": true
+        },
+        {
+          "name": "content",
+          "type": "semantic_content",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "source": [
+          "pourable"
+        ],
+        "target_container": [
+          "fillable"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$source",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target_container"
+        },
+        {
+          "subject": "$source",
+          "predicate": "contains",
+          "object": "$content"
+        },
+        {
+          "subject": "$target_container",
+          "predicate": "reachable",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target_container",
+          "predicate": "contains",
+          "object": "$content"
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "handover_object",
+      "name": "HandoverObject",
+      "description_en": "Hand the currently held object to a recipient localized in the scene.",
+      "category": "human_interaction",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "recipient",
+          "type": "person",
+          "required": true
+        }
+      ],
+      "required_affordances": {
+        "object": [
+          "graspable"
+        ],
+        "recipient": [
+          "can_receive"
+        ]
+      },
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$recipient"
+        },
+        {
+          "subject": "$recipient",
+          "predicate": "reachable",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "$recipient"
+        },
+        {
+          "subject": "robot",
+          "predicate": "gripper_empty",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "inspect_object",
+      "name": "InspectObject",
+      "description_en": "Observe the target from an appropriate viewpoint to verify its identity, state, or relationships.",
+      "category": "perception",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true
+        },
+        {
+          "name": "property",
+          "type": "semantic_property",
+          "required": false
+        }
+      ],
+      "required_affordances": {
+        "target": []
+      },
+      "preconditions": [
+        {
+          "subject": "$target",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "near",
+          "object": "$target"
+        },
+        {
+          "subject": "$target",
+          "predicate": "visible",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "inspected",
+          "value": true
+        }
+      ],
+      "teacher_list_links": [],
+      "retention_policy": "Existing definition retained; list absence does not remove or disable it."
+    },
+    {
+      "skill_id": "walk_omnidirectional_velocity",
+      "name": "WalkOmnidirectionalVelocity",
+      "name_zh": "全向步行（速度控制）",
+      "description_en": "Walk with commanded planar forward/lateral velocity and yaw rate in an explicitly supplied frame for a bounded duration; this does not itself navigate to a scene object.",
+      "category": "locomotion_control",
+      "parameters": [
+        {
+          "name": "vx_m_s",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "vy_m_s",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "yaw_rate_rad_s",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "duration_s",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "reference_frame",
+          "type": "reference_frame",
+          "required": true,
+          "description": "Caller-supplied, verified coordinate frame."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "motion_completed",
+          "value": true,
+          "update": "bounded_velocity_command_completed"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "omnidirectional_locomotion",
+        "velocity_control"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[2]/paragraph",
+          "label_zh": "全向步行（速度控制）",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "turn_by_stepping",
+      "name": "TurnByStepping",
+      "name_zh": "踏步转向",
+      "description_en": "Turn the robot by the requested yaw using stepping turning; direction and frame must be supplied.",
+      "category": "locomotion_control",
+      "parameters": [
+        {
+          "name": "yaw_delta_rad",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "reference_frame",
+          "type": "reference_frame",
+          "required": true,
+          "description": "Caller-supplied, verified coordinate frame."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "heading_changed",
+          "value": true,
+          "update": "by_requested_yaw_in_supplied_frame"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "locomotion",
+        "stepping_turning"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[3]/paragraph",
+          "label_zh": "踏步转向",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "turn_in_place",
+      "name": "TurnInPlace",
+      "name_zh": "原地转向",
+      "description_en": "Turn the robot by the requested yaw using in-place turning; direction and frame must be supplied.",
+      "category": "locomotion_control",
+      "parameters": [
+        {
+          "name": "yaw_delta_rad",
+          "type": "number",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "reference_frame",
+          "type": "reference_frame",
+          "required": true,
+          "description": "Caller-supplied, verified coordinate frame."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "heading_changed",
+          "value": true,
+          "update": "by_requested_yaw_in_supplied_frame"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "locomotion",
+        "in-place_turning"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[4]/paragraph",
+          "label_zh": "原地转向",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "bend_and_lift_object",
+      "name": "BendAndLiftObject",
+      "name_zh": "弯腰抱起",
+      "description_en": "Coordinate bending, establishing a supported grasp or embrace, and lifting the target; unlike lift_held_object, the target need not already be held.",
+      "category": "whole_body_manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "$object",
+          "predicate": "lifted",
+          "value": true
+        }
+      ],
+      "skill_level": "coordinated_skill",
+      "required_robot_capabilities": [
+        "whole_body_bending",
+        "coordinated_object_lifting"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[6]/paragraph",
+          "label_zh": "弯腰抱起",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "reach_and_grasp_object",
+      "name": "ReachAndGraspObject",
+      "name_zh": "朝目标物体伸手抓取",
+      "description_en": "Coordinate reaching toward a target and acquiring a grasp. This option includes grasp acquisition, not just arm preparation.",
+      "category": "whole_body_manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "selected_hand_available",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "held_by_selected_hand",
+          "object": "$hand"
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        }
+      ],
+      "skill_level": "coordinated_skill",
+      "required_robot_capabilities": [
+        "coordinated_reaching",
+        "grasping"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[7]/paragraph",
+          "label_zh": "朝目标物体伸手抓取",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "reach_and_place_object",
+      "name": "ReachAndPlaceObject",
+      "name_zh": "朝目标点伸手放置",
+      "description_en": "Coordinate reaching with a held object and placing it at a supplied target pose with confirmed support before release.",
+      "category": "whole_body_manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "target_pose",
+          "type": "pose_reference",
+          "required": true,
+          "description": "Reference to a supplied pose including orientation; not an object centre."
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "$object",
+          "predicate": "support_or_receiver_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "at_requested_pose",
+          "object": "$target_pose"
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": null
+        }
+      ],
+      "skill_level": "coordinated_skill",
+      "required_robot_capabilities": [
+        "coordinated_reaching",
+        "controlled_placement"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[8]/paragraph",
+          "label_zh": "朝目标点伸手放置",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "reset_lower_body",
+      "name": "ResetLowerBody",
+      "name_zh": "下肢恢复初始状态",
+      "description_en": "Return the lower body to its explicitly supplied initial-state reference.",
+      "category": "configuration_reset",
+      "parameters": [
+        {
+          "name": "reference_state",
+          "type": "state_reference",
+          "required": true,
+          "description": "Explicit calibrated initial-state reference; not an assumed zero pose."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "lower_body_at_reference",
+          "object": "$reference_state"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "configured_lower_body_reset"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[9]/paragraph",
+          "label_zh": "下肢恢复初始状态",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "reset_upper_body",
+      "name": "ResetUpperBody",
+      "name_zh": "上肢恢复初始状态",
+      "description_en": "Return the upper body to its explicitly supplied initial-state reference.",
+      "category": "configuration_reset",
+      "parameters": [
+        {
+          "name": "reference_state",
+          "type": "state_reference",
+          "required": true,
+          "description": "Explicit calibrated initial-state reference; not an assumed zero pose."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "robot",
+          "predicate": "upper_body_at_reference",
+          "object": "$reference_state"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "configured_upper_body_reset"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[10]/paragraph",
+          "label_zh": "上肢恢复初始状态",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "reset_manipulation_state",
+      "name": "ResetManipulationState",
+      "name_zh": "操作类恢复初始状态",
+      "description_en": "Restore an explicitly identified manipulation component to a supplied reference state. The source does not specify whether this means the hand, gripper or arm; clarify the component.",
+      "category": "configuration_reset",
+      "parameters": [
+        {
+          "name": "component",
+          "type": "component_selector",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "reference_state",
+          "type": "state_reference",
+          "required": true,
+          "description": "Explicit calibrated initial-state reference; not an assumed zero pose."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$component",
+          "predicate": "at_reference_state",
+          "object": "$reference_state"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "configured_manipulation_reset"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "humanoid_with_gripper_or_three_finger_hand",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_humanoid_20261030",
+          "locator": "body[15]/paragraph",
+          "label_zh": "恢复初始状态",
+          "match": "new_definition"
+        }
+      ]
+    },
+    {
+      "skill_id": "place_object_at_pose",
+      "name": "PlaceObjectAtPose",
+      "name_zh": "按指定位置与朝向放置",
+      "description_en": "Place a held object at a supplied position and orientation with a verified support relation, then progressively release it.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "target_pose",
+          "type": "pose_reference",
+          "required": true,
+          "description": "Reference to a supplied pose including orientation; not an object centre."
+        },
+        {
+          "name": "support",
+          "type": "surface",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": "robot"
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "$support",
+          "predicate": "support_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "at_requested_pose",
+          "object": "$target_pose"
+        },
+        {
+          "subject": "$object",
+          "predicate": "on",
+          "object": "$support"
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by",
+          "object": null
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "pose_controlled_placement",
+        "controlled_release"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[2]/paragraph",
+          "label_zh": "物体放置",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[1]",
+          "label_zh": "杯子放入托盘",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "hold_and_stabilize_object",
+      "name": "HoldAndStabilizeObject",
+      "name_zh": "保持与固定",
+      "description_en": "Maintain an existing grasp or fixation, object pose and required holding relation against disturbances within verified limits; this is not a new grasp or lift.",
+      "category": "manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        },
+        {
+          "name": "constraint_reference",
+          "type": "contact_constraint_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "duration_s",
+          "type": "number",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "$object",
+          "predicate": "holding_or_fixation_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "holding_constraint_maintained",
+          "value": true
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "sustained_holding",
+        "stabilization"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[3]/paragraph",
+          "label_zh": "保持与固定",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[5]",
+          "label_zh": "旋开瓶盖",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[9]",
+          "label_zh": "双手交接",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "move_end_effector_free_space",
+      "name": "MoveEndEffectorFreeSpace",
+      "name_zh": "自由空间移位",
+      "description_en": "Move the selected hand or a payload already held by that hand to a supplied pose while avoiding unintended contact; no new grasp is implied.",
+      "category": "arm_motion",
+      "parameters": [
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        },
+        {
+          "name": "target_pose",
+          "type": "pose_reference",
+          "required": true,
+          "description": "Reference to a supplied pose including orientation; not an object centre."
+        },
+        {
+          "name": "payload",
+          "type": "scene_element",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "free_space_path_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$hand",
+          "predicate": "at_requested_pose",
+          "object": "$target_pose"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "free_space_pose_control"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "listed_option_implementation_unverified",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[4]/paragraph",
+          "label_zh": "自由空间移位",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[1]",
+          "label_zh": "杯子放入托盘",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[2]",
+          "label_zh": "按下按钮",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[5]",
+          "label_zh": "旋开瓶盖",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[6]",
+          "label_zh": "插入零件",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[9]",
+          "label_zh": "双手交接",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "controlled_release_object",
+      "name": "ControlledReleaseObject",
+      "name_zh": "受控释放",
+      "description_en": "Progressively unload, open the selected hand and break contact only after support or a receiving grasp has been verified. The source marks this as requiring iterative development.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "object",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        },
+        {
+          "name": "support_or_receiver",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "$object",
+          "predicate": "exists",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "$object",
+          "predicate": "held_by_selected_hand",
+          "object": "$hand"
+        },
+        {
+          "subject": "$object",
+          "predicate": "support_or_receiver_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$object",
+          "predicate": "released_by_selected_hand",
+          "object": "$hand"
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "controlled_release",
+        "support_or_receiver_verification"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "requires_iterative_development_per_source",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[7]/paragraph",
+          "label_zh": "受控释放",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[1]",
+          "label_zh": "杯子放入托盘",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[3]",
+          "label_zh": "打开抽屉",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[4]",
+          "label_zh": "打开柜门",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[6]",
+          "label_zh": "插入零件",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[9]",
+          "label_zh": "双手交接",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "translate_with_contact_constraint",
+      "name": "TranslateWithContactConstraint",
+      "name_zh": "接触约束平移",
+      "description_en": "Translate the target under a supplied contact-mode, path or axis, and force/torque constraint. Do not infer missing motion geometry or limits.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "trajectory",
+          "type": "trajectory_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "constraints",
+          "type": "contact_constraint_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "contact_mode_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "contact_motion_completed",
+          "value": true
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "contact_constrained_translate",
+        "contact_feedback"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "requires_iterative_development_per_source",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[8]/paragraph",
+          "label_zh": "接触约束平移",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[2]",
+          "label_zh": "按下按钮",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[3]",
+          "label_zh": "打开抽屉",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[6]",
+          "label_zh": "插入零件",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[7]",
+          "label_zh": "拿工具按指定方向使用",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "rotate_with_contact_constraint",
+      "name": "RotateWithContactConstraint",
+      "name_zh": "接触约束旋转",
+      "description_en": "Rotate the target under a supplied contact-mode, path or axis, and force/torque constraint. Do not infer missing motion geometry or limits.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "scene_element",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "trajectory",
+          "type": "trajectory_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "constraints",
+          "type": "contact_constraint_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "$target",
+          "predicate": "contact_mode_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$target",
+          "predicate": "contact_motion_completed",
+          "value": true
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "contact_constrained_rotate",
+        "contact_feedback"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "requires_iterative_development_per_source",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[9]/paragraph",
+          "label_zh": "接触约束旋转",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[4]",
+          "label_zh": "打开柜门",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[5]",
+          "label_zh": "旋开瓶盖",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[7]",
+          "label_zh": "拿工具按指定方向使用",
+          "match": "composite_template"
+        }
+      ]
+    },
+    {
+      "skill_id": "follow_surface_contact",
+      "name": "FollowSurfaceContact",
+      "name_zh": "贴面跟随",
+      "description_en": "Follow a supplied tangential path on a surface while maintaining the specified normal contact and force constraints.",
+      "category": "contact_manipulation",
+      "parameters": [
+        {
+          "name": "surface",
+          "type": "surface",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "trajectory",
+          "type": "trajectory_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "constraints",
+          "type": "contact_constraint_reference",
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "hand",
+          "type": "hand_selector",
+          "required": true,
+          "description": "Explicit configured hand or manipulator; never assume left/right."
+        }
+      ],
+      "required_affordances": {},
+      "preconditions": [
+        {
+          "subject": "robot",
+          "predicate": "stable_base",
+          "value": true
+        },
+        {
+          "subject": "robot",
+          "predicate": "motion_limits_verified",
+          "value": true
+        },
+        {
+          "subject": "$surface",
+          "predicate": "contact_mode_verified",
+          "value": true
+        }
+      ],
+      "effects": [
+        {
+          "subject": "$surface",
+          "predicate": "surface_path_traversed",
+          "value": true
+        }
+      ],
+      "skill_level": "primitive",
+      "required_robot_capabilities": [
+        "surface_following",
+        "contact_feedback"
+      ],
+      "catalogue_metadata": {
+        "planning_option": true,
+        "execution_ready": false,
+        "platform_scope": "manipulator_with_hand_or_gripper",
+        "source_maturity": "requires_iterative_development_per_source",
+        "implementation_status": "not_verified_by_supplied_documents",
+        "interface_status": "proposed_symbolic_contract_not_a_verified_controller_API",
+        "condition_semantics": "Required runtime conditions and predicted effects, not observed facts.",
+        "parameter_policy": "Ground frames, poses, references and limits at runtime; no fabricated defaults."
+      },
+      "teacher_list_links": [
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[10]/paragraph",
+          "label_zh": "贴面跟随",
+          "match": "new_or_extended_definition"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[7]",
+          "label_zh": "拿工具按指定方向使用",
+          "match": "composite_template"
+        },
+        {
+          "source_id": "teacher_hand_20261030",
+          "locator": "body[14]/table/row[8]",
+          "label_zh": "擦拭桌面",
+          "match": "composite_template"
+        }
+      ]
+    }
+  ],
+  "alignment_contract": {
+    "selection_order": [
+      "Match subtask goal conditions against skill effects.",
+      "Check that every required skill parameter can be bound.",
+      "Check required affordances against scene-element attributes.",
+      "Check preconditions against the current or predicted state.",
+      "Prefer the shortest valid skill sequence; break ties deterministically by skill_id."
+    ],
+    "required_output_fields": [
+      "subtask_id",
+      "skill_id",
+      "arguments",
+      "matched_goal_conditions",
+      "precondition_check",
+      "predicted_effects",
+      "confidence",
+      "evidence"
+    ],
+    "failure_status": "unresolved",
+    "failure_reasons": [
+      "scene_element_missing",
+      "scene_element_not_localized",
+      "required_affordance_missing",
+      "parameter_unbound",
+      "precondition_unsatisfied",
+      "no_skill_effect_matches_goal",
+      "ambiguous_binding_below_margin",
+      "unsupported_robot_capability"
+    ]
+  },
+  "composite_task_templates": [
+    {
+      "template_id": "cup_into_tray",
+      "name_zh": "杯子放入托盘",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[1]",
+      "source_sequence_zh": "自由移位 → 建立抓持 → 抬起并搬运 → 受控接触托盘 → 受控释放",
+      "possible_skill_ids": [
+        "move_end_effector_free_space",
+        "grasp_object",
+        "lift_held_object",
+        "place_object_at_pose",
+        "controlled_release_object"
+      ],
+      "unregistered_operations": [
+        "controlled_contact"
+      ],
+      "composition_notes": "Resolve whether the tray is a support or container; do not assume in versus on.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "press_button",
+      "name_zh": "按下按钮",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[2]",
+      "source_sequence_zh": "自由移位 → 受控接触 → 约束平移到触发条件 → 撤回",
+      "possible_skill_ids": [
+        "move_end_effector_free_space",
+        "press_control",
+        "translate_with_contact_constraint"
+      ],
+      "unregistered_operations": [
+        "controlled_contact",
+        "withdraw"
+      ],
+      "composition_notes": "Trigger feedback and a withdrawal trajectory must be supplied.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "open_drawer",
+      "name_zh": "打开抽屉",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[3]",
+      "source_sequence_zh": "接近把手 → 建立抓持 → 沿滑轨约束平移 → 释放",
+      "possible_skill_ids": [
+        "position_arm_for_object",
+        "grasp_object",
+        "translate_with_contact_constraint",
+        "controlled_release_object",
+        "open_articulated_object"
+      ],
+      "unregistered_operations": [],
+      "composition_notes": "Ground the handle, rail direction and release condition.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "open_cabinet_door",
+      "name_zh": "打开柜门",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[4]",
+      "source_sequence_zh": "抓把手 → 必要时转动解锁 → 沿铰链约束旋转 → 释放",
+      "possible_skill_ids": [
+        "grasp_object",
+        "rotate_with_contact_constraint",
+        "controlled_release_object",
+        "open_articulated_object"
+      ],
+      "unregistered_operations": [],
+      "composition_notes": "Unlocking is conditional; ground the hinge and lock state.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "unscrew_bottle_cap",
+      "name_zh": "旋开瓶盖",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[5]",
+      "source_sequence_zh": "左手固定瓶身；右手抓盖 → 旋转 → 必要时换指并重复 → 分离后搬走",
+      "possible_skill_ids": [
+        "hold_and_stabilize_object",
+        "grasp_object",
+        "rotate_with_contact_constraint",
+        "move_end_effector_free_space"
+      ],
+      "unregistered_operations": [
+        "regrasp_if_needed",
+        "verify_separation"
+      ],
+      "composition_notes": "Requires two independently controlled hands; no fixed repeat count or torque is supplied.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "insert_part",
+      "name_zh": "插入零件",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[6]",
+      "source_sequence_zh": "抓持 → 必要时手内调姿 → 接近入口 → 局部搜索对准 → 约束平移 → 释放",
+      "possible_skill_ids": [
+        "grasp_object",
+        "move_end_effector_free_space",
+        "translate_with_contact_constraint",
+        "controlled_release_object"
+      ],
+      "unregistered_operations": [
+        "in_hand_reorientation_if_needed",
+        "local_search_alignment"
+      ],
+      "composition_notes": "Ground the opening, clearance, insertion axis and contact constraints.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "use_tool_in_direction",
+      "name_zh": "拿工具按指定方向使用",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[7]",
+      "source_sequence_zh": "功能部位抓持 → 手内调姿或重配置 → 接触目标 → 执行平移、旋转或贴面跟随",
+      "possible_skill_ids": [
+        "grasp_object",
+        "translate_with_contact_constraint",
+        "rotate_with_contact_constraint",
+        "follow_surface_contact"
+      ],
+      "unregistered_operations": [
+        "functional_grasp_selection",
+        "in_hand_reconfiguration_if_needed",
+        "controlled_contact"
+      ],
+      "composition_notes": "Select a task-appropriate contact primitive; the listed alternatives are not all mandatory.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "wipe_table",
+      "name_zh": "擦拭桌面",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[8]",
+      "source_sequence_zh": "抓住擦拭工具 → 接触桌面 → 贴面跟随并保持接触力 → 抬起 → 放回",
+      "possible_skill_ids": [
+        "grasp_object",
+        "follow_surface_contact",
+        "lift_held_object",
+        "place_object_on_surface"
+      ],
+      "unregistered_operations": [
+        "controlled_contact"
+      ],
+      "composition_notes": "Ground the tool, wiping path, contact force constraints and return location.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    },
+    {
+      "template_id": "bimanual_handover",
+      "name_zh": "双手交接",
+      "source_id": "teacher_hand_20261030",
+      "source_locator": "body[14]/table/row[9]",
+      "source_sequence_zh": "交出手保持 → 接收手接近并抓持 → 确认接收稳定 → 交出手释放",
+      "possible_skill_ids": [
+        "hold_and_stabilize_object",
+        "move_end_effector_free_space",
+        "grasp_object",
+        "controlled_release_object"
+      ],
+      "unregistered_operations": [
+        "verify_receiving_grasp_stability"
+      ],
+      "composition_notes": "Requires two hands; transfer between hands is not handover to a person.",
+      "execution_ready": false,
+      "status": "source_composition_example_not_an_atomic_skill_or_validated_execution_plan"
+    }
+  ],
+  "updated_at": "2026-10-30",
+  "catalogue_policy": {
+    "scope": "Extensible, versioned skill options across platforms; not a controller capability assertion.",
+    "source_lists_exhaustive": false,
+    "retain_existing_skills": true,
+    "future_extension": "Append reviewed definitions and semantic profiles without reusing existing IDs.",
+    "current_snapshot_closed_world": "Only registered IDs may be proposed in a given run. This is not a permanent limit on future skills.",
+    "legacy_robot_profile_scope": "robot_profile remains the original quadruped default; it does not certify new humanoid, two-hand or contact capabilities.",
+    "template_policy": "Composite examples are stored separately; do not issue template IDs as atomic skill IDs.",
+    "runtime_boundary": "The historical collection worker still selects five skills. Four-column matrices cannot encode all catalogue parameters. No executor or motion defaults are changed."
+  },
+  "source_documents": [
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "filename": "Skill清单.docx",
+      "sha256": "e6778c76b2d4f1fab49c84201cb3a6a19fe83686e25bc377048e150ca81a004e",
+      "received_date": "2026-10-30",
+      "scope": "User-provided teacher list, current snapshot; implementation is not verified"
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "filename": "灵巧操作手部清单.docx",
+      "sha256": "305406f9d9a1aa881f19a8514040d9e5790b04afdc0ffef6d4770ae09d0d4458",
+      "received_date": "2026-10-30",
+      "scope": "User-provided teacher list, current snapshot; implementation is not verified"
+    }
+  ],
+  "teacher_list_mapping": [
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[2]/paragraph",
+      "source_label_zh": "全向步行（速度控制）",
+      "skill_ids": [
+        "walk_omnidirectional_velocity"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[3]/paragraph",
+      "source_label_zh": "踏步转向",
+      "skill_ids": [
+        "turn_by_stepping"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[4]/paragraph",
+      "source_label_zh": "原地转向",
+      "skill_ids": [
+        "turn_in_place"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[6]/paragraph",
+      "source_label_zh": "弯腰抱起",
+      "skill_ids": [
+        "bend_and_lift_object"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[7]/paragraph",
+      "source_label_zh": "朝目标物体伸手抓取",
+      "skill_ids": [
+        "reach_and_grasp_object"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[8]/paragraph",
+      "source_label_zh": "朝目标点伸手放置",
+      "skill_ids": [
+        "reach_and_place_object"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[9]/paragraph",
+      "source_label_zh": "下肢恢复初始状态",
+      "skill_ids": [
+        "reset_lower_body"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[10]/paragraph",
+      "source_label_zh": "上肢恢复初始状态",
+      "skill_ids": [
+        "reset_upper_body"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[12]/paragraph",
+      "source_label_zh": "夹取抓取",
+      "skill_ids": [
+        "grasp_object"
+      ],
+      "template_ids": [],
+      "match": "existing_semantic_mapping",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[13]/paragraph",
+      "source_label_zh": "打开放置",
+      "skill_ids": [
+        "release_object",
+        "place_object_on_surface",
+        "place_object_in_container"
+      ],
+      "template_ids": [],
+      "match": "existing_semantic_mapping",
+      "note": "Do not interpret gripper opening as opening a door."
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[14]/paragraph",
+      "source_label_zh": "推动",
+      "skill_ids": [
+        "push_object"
+      ],
+      "template_ids": [],
+      "match": "existing_semantic_mapping",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_humanoid_20261030",
+      "locator": "body[15]/paragraph",
+      "source_label_zh": "恢复初始状态",
+      "skill_ids": [
+        "reset_manipulation_state"
+      ],
+      "template_ids": [],
+      "match": "new_definition",
+      "note": "Reset component/reference are unspecified and require clarification."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[1]/paragraph",
+      "source_label_zh": "物体抓取",
+      "skill_ids": [
+        "grasp_object"
+      ],
+      "template_ids": [],
+      "match": "existing_semantic_mapping",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[2]/paragraph",
+      "source_label_zh": "物体放置",
+      "skill_ids": [
+        "place_object_at_pose",
+        "place_object_on_surface",
+        "place_object_in_container"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[3]/paragraph",
+      "source_label_zh": "保持与固定",
+      "skill_ids": [
+        "hold_and_stabilize_object"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[4]/paragraph",
+      "source_label_zh": "自由空间移位",
+      "skill_ids": [
+        "move_end_effector_free_space"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[7]/paragraph",
+      "source_label_zh": "受控释放",
+      "skill_ids": [
+        "controlled_release_object"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[8]/paragraph",
+      "source_label_zh": "接触约束平移",
+      "skill_ids": [
+        "translate_with_contact_constraint",
+        "push_object",
+        "pull_object",
+        "press_control"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[9]/paragraph",
+      "source_label_zh": "接触约束旋转",
+      "skill_ids": [
+        "rotate_with_contact_constraint"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[10]/paragraph",
+      "source_label_zh": "贴面跟随",
+      "skill_ids": [
+        "follow_surface_contact"
+      ],
+      "template_ids": [],
+      "match": "new_or_extended_definition",
+      "note": ""
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[1]",
+      "source_label_zh": "杯子放入托盘",
+      "skill_ids": [
+        "move_end_effector_free_space",
+        "grasp_object",
+        "lift_held_object",
+        "place_object_at_pose",
+        "controlled_release_object"
+      ],
+      "template_ids": [
+        "cup_into_tray"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[2]",
+      "source_label_zh": "按下按钮",
+      "skill_ids": [
+        "move_end_effector_free_space",
+        "press_control",
+        "translate_with_contact_constraint"
+      ],
+      "template_ids": [
+        "press_button"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[3]",
+      "source_label_zh": "打开抽屉",
+      "skill_ids": [
+        "position_arm_for_object",
+        "grasp_object",
+        "translate_with_contact_constraint",
+        "controlled_release_object",
+        "open_articulated_object"
+      ],
+      "template_ids": [
+        "open_drawer"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[4]",
+      "source_label_zh": "打开柜门",
+      "skill_ids": [
+        "grasp_object",
+        "rotate_with_contact_constraint",
+        "controlled_release_object",
+        "open_articulated_object"
+      ],
+      "template_ids": [
+        "open_cabinet_door"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[5]",
+      "source_label_zh": "旋开瓶盖",
+      "skill_ids": [
+        "hold_and_stabilize_object",
+        "grasp_object",
+        "rotate_with_contact_constraint",
+        "move_end_effector_free_space"
+      ],
+      "template_ids": [
+        "unscrew_bottle_cap"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[6]",
+      "source_label_zh": "插入零件",
+      "skill_ids": [
+        "grasp_object",
+        "move_end_effector_free_space",
+        "translate_with_contact_constraint",
+        "controlled_release_object"
+      ],
+      "template_ids": [
+        "insert_part"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[7]",
+      "source_label_zh": "拿工具按指定方向使用",
+      "skill_ids": [
+        "grasp_object",
+        "translate_with_contact_constraint",
+        "rotate_with_contact_constraint",
+        "follow_surface_contact"
+      ],
+      "template_ids": [
+        "use_tool_in_direction"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[8]",
+      "source_label_zh": "擦拭桌面",
+      "skill_ids": [
+        "grasp_object",
+        "follow_surface_contact",
+        "lift_held_object",
+        "place_object_on_surface"
+      ],
+      "template_ids": [
+        "wipe_table"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    },
+    {
+      "source_id": "teacher_hand_20261030",
+      "locator": "body[14]/table/row[9]",
+      "source_label_zh": "双手交接",
+      "skill_ids": [
+        "hold_and_stabilize_object",
+        "move_end_effector_free_space",
+        "grasp_object",
+        "controlled_release_object"
+      ],
+      "template_ids": [
+        "bimanual_handover"
+      ],
+      "match": "composite_template",
+      "note": "Skill references are possible components, not an executed or validated sequence."
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# Client build of the navigation team's interface. Metres / radians / seconds.
+# Source: D:/navvvvvvvvv-main/navvvvvvvvv-main/nav_interfaces/action/NavigateTo.action
+# Field definitions are unchanged. This file does not execute a goal.
+float64 s_x
+float64 s_y
+float64 s_z
+float64 s_roll
+float64 s_pitch
+float64 s_yaw
+float64 g_x
+float64 g_y
+float64 g_z
+float64 g_roll
+float64 g_pitch
+float64 g_yaw
+float32 pos_tol
+float32 yaw_tol
+float32 timeout
+float32 max_speed
+---
+bool success
+geometry_msgs/PoseStamped final_pose
+float32 internal_error
+float32 uncertainty
+string reason
+float32 elapsed
+float32 blocked_distance
+float32 blocked_bearing
+---
+string stage
+float32 remaining_dist
+float32 remaining_yaw
+geometry_msgs/PoseStamped current_pose

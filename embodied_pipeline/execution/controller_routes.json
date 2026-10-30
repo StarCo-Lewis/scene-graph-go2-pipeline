@@ -1,0 +1,140 @@
+{
+  "schema_version": "controller_routes_v1",
+  "version": "0.1.0",
+  "scope": "Logical routing proposal only; actual team ownership and controller contracts await confirmation.",
+  "modules": {
+    "navigation": {
+      "ownership_status": "proposed_logical_module_actual_group_owner_to_confirm",
+      "adapter_status": "interface_pending",
+      "required_from_group": [
+        "Transport, endpoint and versioned request/response schema",
+        "Robot/platform capabilities and supported skill IDs",
+        "Coordinate frames, units and runtime state/pose sources",
+        "Accepted versus completed feedback and correlation identifiers",
+        "Timeout, failure, cancellation and unknown-outcome semantics",
+        "Duplicate delivery/reconnect policy and raw feedback evidence",
+        "Current start pose and validated approach goal, map-frame registration, first-goal alignment policy; navigation module owns path planning."
+      ],
+      "known_interface": {
+        "action_name": "/nav/navigate_to",
+        "action_type": "nav_interfaces/action/NavigateTo",
+        "goal_field_types": {
+          "s_x": "double",
+          "s_y": "double",
+          "s_z": "double",
+          "s_roll": "double",
+          "s_pitch": "double",
+          "s_yaw": "double",
+          "g_x": "double",
+          "g_y": "double",
+          "g_z": "double",
+          "g_roll": "double",
+          "g_pitch": "double",
+          "g_yaw": "double",
+          "pos_tol": "float",
+          "yaw_tol": "float",
+          "timeout": "float",
+          "max_speed": "float"
+        },
+        "source": "Existing execution/navigation_contract.py and tcp_protocol.py",
+        "existing_clients": [
+          "execution/ros2_client.py:Ros2NavigationClient",
+          "execution/tcp_client.py"
+        ],
+        "scope": "Existing single-goal interface; no connection made and no claim that navigate_to_location is already bound.",
+        "parameters_policy": "Use existing reviewed values supplied through the existing navigation converter; never insert new defaults."
+      }
+    },
+    "locomotion": {
+      "ownership_status": "proposed_logical_module_actual_group_owner_to_confirm",
+      "adapter_status": "interface_pending",
+      "required_from_group": [
+        "Transport, endpoint and versioned request/response schema",
+        "Robot/platform capabilities and supported skill IDs",
+        "Coordinate frames, units and runtime state/pose sources",
+        "Accepted versus completed feedback and correlation identifiers",
+        "Timeout, failure, cancellation and unknown-outcome semantics",
+        "Duplicate delivery/reconnect policy and raw feedback evidence",
+        "Supported bounded motion requests and hardware-enforced limits"
+      ],
+      "known_interface": null
+    },
+    "whole_body": {
+      "ownership_status": "proposed_logical_module_actual_group_owner_to_confirm",
+      "adapter_status": "interface_pending",
+      "required_from_group": [
+        "Transport, endpoint and versioned request/response schema",
+        "Robot/platform capabilities and supported skill IDs",
+        "Coordinate frames, units and runtime state/pose sources",
+        "Accepted versus completed feedback and correlation identifiers",
+        "Timeout, failure, cancellation and unknown-outcome semantics",
+        "Duplicate delivery/reconnect policy and raw feedback evidence",
+        "Coordinated controller interface and calibrated initial configurations"
+      ],
+      "known_interface": null
+    },
+    "manipulation": {
+      "ownership_status": "proposed_logical_module_actual_group_owner_to_confirm",
+      "adapter_status": "interface_pending",
+      "required_from_group": [
+        "Transport, endpoint and versioned request/response schema",
+        "Robot/platform capabilities and supported skill IDs",
+        "Coordinate frames, units and runtime state/pose sources",
+        "Accepted versus completed feedback and correlation identifiers",
+        "Timeout, failure, cancellation and unknown-outcome semantics",
+        "Duplicate delivery/reconnect policy and raw feedback evidence",
+        "Hand/arm selection, object pose source, grasp/contact constraints and stable-support/receiver feedback"
+      ],
+      "known_interface": null
+    },
+    "perception": {
+      "ownership_status": "proposed_logical_module_actual_group_owner_to_confirm",
+      "adapter_status": "interface_pending",
+      "required_from_group": [
+        "Transport, endpoint and versioned request/response schema",
+        "Robot/platform capabilities and supported skill IDs",
+        "Coordinate frames, units and runtime state/pose sources",
+        "Accepted versus completed feedback and correlation identifiers",
+        "Timeout, failure, cancellation and unknown-outcome semantics",
+        "Duplicate delivery/reconnect policy and raw feedback evidence",
+        "Observed properties, observation timestamps and evidence format; do not return desired state as observation"
+      ],
+      "known_interface": null
+    }
+  },
+  "skills": {
+    "navigate_to_object": "navigation",
+    "navigate_to_location": "navigation",
+    "adjust_body_height": "locomotion",
+    "walk_omnidirectional_velocity": "locomotion",
+    "turn_by_stepping": "locomotion",
+    "turn_in_place": "locomotion",
+    "bend_and_lift_object": "whole_body",
+    "reach_and_grasp_object": "whole_body",
+    "reach_and_place_object": "whole_body",
+    "reset_lower_body": "whole_body",
+    "reset_upper_body": "whole_body",
+    "position_arm_for_object": "manipulation",
+    "grasp_object": "manipulation",
+    "lift_held_object": "manipulation",
+    "place_object_on_surface": "manipulation",
+    "place_object_in_container": "manipulation",
+    "release_object": "manipulation",
+    "open_articulated_object": "manipulation",
+    "close_articulated_object": "manipulation",
+    "push_object": "manipulation",
+    "pull_object": "manipulation",
+    "press_control": "manipulation",
+    "pour_into_container": "manipulation",
+    "handover_object": "manipulation",
+    "reset_manipulation_state": "manipulation",
+    "place_object_at_pose": "manipulation",
+    "hold_and_stabilize_object": "manipulation",
+    "move_end_effector_free_space": "manipulation",
+    "controlled_release_object": "manipulation",
+    "translate_with_contact_constraint": "manipulation",
+    "rotate_with_contact_constraint": "manipulation",
+    "follow_surface_contact": "manipulation",
+    "inspect_object": "perception"
+  }
+}

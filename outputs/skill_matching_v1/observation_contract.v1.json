@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Optional evidence input for offline symbolic plan review",
+  "source_types": ["robot_telemetry", "camera_observation", "gripper_sensor", "navigation_map", "affordance_estimator", "human_verified"],
+  "snapshot_format": {
+    "schema_version": "1.0",
+    "facts": [
+      {
+        "subject": "robot or an existing integer scene node ID",
+        "predicate": "predicate from the atomic skill library",
+        "value": "boolean, integer scene node ID, robot, or null as required by the predicate",
+        "source": "one of source_types",
+        "observed_at": "ISO 8601 timestamp with timezone"
+      }
+    ]
+  },
+  "recommended_sources": {
+    "exists": "ConceptGraphs scene node",
+    "localized": "ConceptGraphs bounding box",
+    "on": "ConceptGraphs scene relation or camera observation",
+    "in": "ConceptGraphs scene relation or camera observation",
+    "near": "robot telemetry",
+    "visible": "camera observation",
+    "navigable": "navigation map",
+    "reachable": "robot telemetry or affordance estimator",
+    "graspable": "affordance estimator or human verification",
+    "gripper_empty": "gripper sensor",
+    "held_by": "gripper sensor or camera observation",
+    "stable_base": "robot telemetry",
+    "support_surface": "affordance estimator or human verification"
+  },
+  "trust_policy": "A proposed skill effect is never accepted as an observed fact. Missing facts remain unknown. External observations must name a source and timestamp."
+}

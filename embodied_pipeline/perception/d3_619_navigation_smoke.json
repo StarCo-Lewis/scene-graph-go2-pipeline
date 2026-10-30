@@ -1,0 +1,11 @@
+{
+  "schema_version": "real_scene_navigation_smoke_v1",
+  "task_id": "d3_619_navigate_round_table_179",
+  "scene_dir": "outputs/real_scene_runs/d3_619_graph_20261022_094742_334872/scene",
+  "scene_graph_sha256": "4f79f1b86ad3335f7a100b65987ad0d4017bea0b78f46deec97d4c31652e1174",
+  "scene_edges_sha256": "167087a7dc898c2afe4a8129d6b8c7dfbaa7a9d4a79e924d8fa8affc79f30a60",
+  "instruction": "Navigate to the round table (ID 179) with a white marble-patterned top and an orange slatted base, and stop near it. Do not pick up, lift, place, or move any scene object.",
+  "target_element_id": 179,
+  "evaluation_scope": "Planning JSON generation only; no simulated or physical execution.",
+  "evaluation_rule": "At least one navigation action to element 179, no other targets or manipulation. Repeated navigation is reported, not silently removed."
+}

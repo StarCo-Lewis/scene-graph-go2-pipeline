@@ -1,0 +1,590 @@
+{
+  "version": "1.1",
+  "scope": "Retrieval descriptions for declared skill options only; not verified robot capabilities or numerical controller parameters.",
+  "profiles": {
+    "navigate_to_object": {
+      "description_en": "Move the robot near a grounded object. If a lifted payload is already held, carry it along without releasing it.",
+      "aliases": [
+        "approach",
+        "visit",
+        "go to",
+        "return to",
+        "carry to",
+        "move near an object",
+        "transport to"
+      ],
+      "examples": [
+        "Visit the sideboard, then return to the kettle.",
+        "Carry the already held kettle to the cabinet."
+      ],
+      "not_equivalent": [
+        "grasp an object",
+        "place or release the carried object",
+        "invent a reachable room pose"
+      ],
+      "prerequisite_skills": []
+    },
+    "navigate_to_location": {
+      "description_en": "Move the robot to a grounded room, waypoint or destination pose, rather than to an object instance.",
+      "aliases": [
+        "go to a waypoint",
+        "enter a room",
+        "navigate to a pose",
+        "navigate to a waypoint"
+      ],
+      "examples": [
+        "Move to the provided destination waypoint."
+      ],
+      "not_equivalent": [
+        "object-centered navigation without a location binding"
+      ],
+      "prerequisite_skills": []
+    },
+    "adjust_body_height": {
+      "description_en": "Raise or lower the robot body to a specified height while keeping a stable base.",
+      "aliases": [
+        "raise body",
+        "lower body",
+        "adjust body height"
+      ],
+      "examples": [
+        "Lower the robot body to the given height."
+      ],
+      "not_equivalent": [
+        "lift a held object",
+        "move the robot to another room"
+      ],
+      "prerequisite_skills": []
+    },
+    "position_arm_for_object": {
+      "description_en": "Prepare the arm for an object or support surface before grasping or placement. This preparation does not itself acquire or release an object.",
+      "aliases": [
+        "prepare grasp",
+        "prepare placement",
+        "align gripper",
+        "reach with arm",
+        "prepare arm"
+      ],
+      "examples": [
+        "Prepare the arm to grasp the kettle.",
+        "Prepare the arm to place the held kettle on the cabinet."
+      ],
+      "not_equivalent": [
+        "completed grasp",
+        "completed placement",
+        "joint trajectory validated on a real robot"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object"
+      ]
+    },
+    "grasp_object": {
+      "description_en": "Acquire a graspable object with an empty gripper after approaching and arm preparation. Change the object from unheld to held; this is not continuous holding or lifting.",
+      "aliases": [
+        "grasp",
+        "grab",
+        "take hold of",
+        "pick up",
+        "retrieve",
+        "grasp an object",
+        "pick up an object"
+      ],
+      "examples": [
+        "Take hold of the kettle.",
+        "Pick up and lift the kettle: grasp is the acquisition part."
+      ],
+      "not_equivalent": [
+        "keep holding an already held object",
+        "catch a flying object",
+        "carry without a new grasp",
+        "lift after grasp"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "lift_held_object": {
+      "description_en": "Lift an already grasped object away from its support before carrying it. The gripper must already hold the object.",
+      "aliases": [
+        "lift",
+        "raise held object",
+        "lift a grasped object"
+      ],
+      "examples": [
+        "Lift the kettle already in the gripper.",
+        "Pick up and lift the kettle: lift follows grasp."
+      ],
+      "not_equivalent": [
+        "raise robot body",
+        "grasp acquisition",
+        "keep holding without an additional lift"
+      ],
+      "prerequisite_skills": [
+        "grasp_object"
+      ]
+    },
+    "place_object_on_surface": {
+      "description_en": "Place a currently held object on a grounded support surface and release it. Approach the surface and prepare the arm when needed.",
+      "aliases": [
+        "put on",
+        "set down on",
+        "place on",
+        "leave resting on",
+        "place on a support surface"
+      ],
+      "examples": [
+        "Set the held kettle on the sideboard and release it."
+      ],
+      "not_equivalent": [
+        "carry while keeping hold",
+        "place inside a container",
+        "handover to a person"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "place_object_in_container": {
+      "description_en": "Put a currently held object inside a grounded container and release it.",
+      "aliases": [
+        "put in",
+        "insert into",
+        "place inside a container"
+      ],
+      "examples": [
+        "Place the held apple inside the bowl."
+      ],
+      "not_equivalent": [
+        "place on a support surface",
+        "pour liquid"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "release_object": {
+      "description_en": "Open the gripper to release a held object only after safe contact or a receiving relationship is established.",
+      "aliases": [
+        "release",
+        "let go",
+        "release an object"
+      ],
+      "examples": [
+        "Release the object after its support is established."
+      ],
+      "not_equivalent": [
+        "drop freely without support",
+        "keep holding"
+      ],
+      "prerequisite_skills": []
+    },
+    "open_articulated_object": {
+      "description_en": "Open a grounded door, drawer or articulated container using its controllable handle or joint.",
+      "aliases": [
+        "open drawer",
+        "open door",
+        "open an articulated object"
+      ],
+      "examples": [
+        "Open the drawer using its handle."
+      ],
+      "not_equivalent": [
+        "move to an open-office room",
+        "release the gripper"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "close_articulated_object": {
+      "description_en": "Close a grounded door, drawer or articulated container.",
+      "aliases": [
+        "close drawer",
+        "shut door",
+        "close an articulated object"
+      ],
+      "examples": [
+        "Close the drawer."
+      ],
+      "not_equivalent": [
+        "close the gripper to grasp"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "push_object": {
+      "description_en": "Push a pushable object along a specified grounded direction and distance.",
+      "aliases": [
+        "push",
+        "slide by pushing",
+        "push an object"
+      ],
+      "examples": [
+        "Push the box in the specified direction."
+      ],
+      "not_equivalent": [
+        "carry a grasped object",
+        "pull"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "pull_object": {
+      "description_en": "Pull a pullable object along a specified grounded direction and distance.",
+      "aliases": [
+        "pull",
+        "draw toward",
+        "pull an object"
+      ],
+      "examples": [
+        "Pull the box toward the robot."
+      ],
+      "not_equivalent": [
+        "push",
+        "pick up"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "press_control": {
+      "description_en": "Press or operate a grounded button, switch or controllable component.",
+      "aliases": [
+        "press button",
+        "toggle switch",
+        "press a button"
+      ],
+      "examples": [
+        "Press the appliance button."
+      ],
+      "not_equivalent": [
+        "push an entire object"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "pour_into_container": {
+      "description_en": "Pour the declared contents of a currently held source container into a grounded receiving container.",
+      "aliases": [
+        "pour",
+        "decant",
+        "pour into a container"
+      ],
+      "examples": [
+        "Pour water from the held kettle into the cup."
+      ],
+      "not_equivalent": [
+        "place the whole kettle into a container",
+        "assume water is present"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object",
+        "grasp_object",
+        "lift_held_object"
+      ]
+    },
+    "handover_object": {
+      "description_en": "Give a currently held object to a localized receiving person and release it when accepted.",
+      "aliases": [
+        "hand over",
+        "give to person",
+        "handover an object"
+      ],
+      "examples": [
+        "Hand the held plate to the receiving person."
+      ],
+      "not_equivalent": [
+        "place on a cabinet",
+        "assume an unlocalized recipient"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object",
+        "position_arm_for_object"
+      ]
+    },
+    "inspect_object": {
+      "description_en": "Observe an object from an appropriate viewpoint to verify identity, state or relation.",
+      "aliases": [
+        "inspect",
+        "observe",
+        "check visually",
+        "inspect an object"
+      ],
+      "examples": [
+        "Inspect the cup to check its contents."
+      ],
+      "not_equivalent": [
+        "claim a state without observations",
+        "mere navigation success"
+      ],
+      "prerequisite_skills": [
+        "navigate_to_object"
+      ]
+    },
+    "walk_omnidirectional_velocity": {
+      "description_en": "Walk with commanded planar forward/lateral velocity and yaw rate in an explicitly supplied frame for a bounded duration; this does not itself navigate to a scene object.",
+      "aliases": [
+        "omnidirectional walking",
+        "walk sideways",
+        "velocity-controlled walking"
+      ],
+      "examples": [
+        "Walk with the supplied velocity command and duration."
+      ],
+      "not_equivalent": [
+        "goal-directed object navigation",
+        "verified collision avoidance"
+      ],
+      "prerequisite_skills": []
+    },
+    "turn_by_stepping": {
+      "description_en": "Turn the robot by the requested yaw using stepping turning; direction and frame must be supplied.",
+      "aliases": [
+        "stepping turn",
+        "踏步转向"
+      ],
+      "examples": [
+        "Perform the requested stepping turn."
+      ],
+      "not_equivalent": [
+        "automatic waypoint navigation"
+      ],
+      "prerequisite_skills": []
+    },
+    "turn_in_place": {
+      "description_en": "Turn the robot by the requested yaw using in-place turning; direction and frame must be supplied.",
+      "aliases": [
+        "in-place turn",
+        "原地转向"
+      ],
+      "examples": [
+        "Perform the requested in-place turn."
+      ],
+      "not_equivalent": [
+        "automatic waypoint navigation"
+      ],
+      "prerequisite_skills": []
+    },
+    "bend_and_lift_object": {
+      "description_en": "Coordinate bending, establishing a supported grasp or embrace, and lifting the target; unlike lift_held_object, the target need not already be held.",
+      "aliases": [
+        "bend down and lift",
+        "bend and pick up",
+        "embrace and lift"
+      ],
+      "examples": [
+        "Bend down and lift the specified object."
+      ],
+      "not_equivalent": [
+        "lift an already grasped object only",
+        "assume a quadruped supports a humanoid controller"
+      ],
+      "prerequisite_skills": []
+    },
+    "reach_and_grasp_object": {
+      "description_en": "Coordinate reaching toward a target and acquiring a grasp. This option includes grasp acquisition, not just arm preparation.",
+      "aliases": [
+        "reach and grasp",
+        "reach toward and take hold"
+      ],
+      "examples": [
+        "Reach toward the specified object and grasp it with the selected hand."
+      ],
+      "not_equivalent": [
+        "arm preparation without grasp",
+        "preexisting held state"
+      ],
+      "prerequisite_skills": []
+    },
+    "reach_and_place_object": {
+      "description_en": "Coordinate reaching with a held object and placing it at a supplied target pose with confirmed support before release.",
+      "aliases": [
+        "reach and place",
+        "reach toward a target point and place"
+      ],
+      "examples": [
+        "Reach to the supplied placement pose and place the held object."
+      ],
+      "not_equivalent": [
+        "release in unsupported free space",
+        "navigation to an object centre"
+      ],
+      "prerequisite_skills": []
+    },
+    "reset_lower_body": {
+      "description_en": "Return the lower body to its explicitly supplied initial-state reference.",
+      "aliases": [
+        "lower body reset",
+        "下肢恢复初始状态"
+      ],
+      "examples": [
+        "Restore the lower body to its supplied reference state."
+      ],
+      "not_equivalent": [
+        "reset world origin or odometry",
+        "assume a zero joint pose",
+        "silently release held objects"
+      ],
+      "prerequisite_skills": []
+    },
+    "reset_upper_body": {
+      "description_en": "Return the upper body to its explicitly supplied initial-state reference.",
+      "aliases": [
+        "upper body reset",
+        "上肢恢复初始状态"
+      ],
+      "examples": [
+        "Restore the upper body to its supplied reference state."
+      ],
+      "not_equivalent": [
+        "reset world origin or odometry",
+        "assume a zero joint pose",
+        "silently release held objects"
+      ],
+      "prerequisite_skills": []
+    },
+    "reset_manipulation_state": {
+      "description_en": "Restore an explicitly identified manipulation component to a supplied reference state. The source does not specify whether this means the hand, gripper or arm; clarify the component.",
+      "aliases": [
+        "reset manipulation state",
+        "restore manipulation initial state"
+      ],
+      "examples": [
+        "Restore the specified component to its provided initial-state reference."
+      ],
+      "not_equivalent": [
+        "assume this means lower-body reset",
+        "release an object as an implicit side effect"
+      ],
+      "prerequisite_skills": []
+    },
+    "place_object_at_pose": {
+      "description_en": "Place a held object at a supplied position and orientation with a verified support relation, then progressively release it.",
+      "aliases": [
+        "place with specified orientation",
+        "oriented placement"
+      ],
+      "examples": [
+        "Place the held object at the supplied position and orientation."
+      ],
+      "not_equivalent": [
+        "unconstrained placement on any surface",
+        "assume a support geometry or force limit"
+      ],
+      "prerequisite_skills": []
+    },
+    "hold_and_stabilize_object": {
+      "description_en": "Maintain an existing grasp or fixation, object pose and required holding relation against disturbances within verified limits; this is not a new grasp or lift.",
+      "aliases": [
+        "keep holding",
+        "stabilize the object",
+        "hold the bottle steady"
+      ],
+      "examples": [
+        "Keep the bottle fixed with the selected hand while another action operates on its cap."
+      ],
+      "not_equivalent": [
+        "grasp an unheld object",
+        "lift again",
+        "release or place"
+      ],
+      "prerequisite_skills": []
+    },
+    "move_end_effector_free_space": {
+      "description_en": "Move the selected hand or a payload already held by that hand to a supplied pose while avoiding unintended contact; no new grasp is implied.",
+      "aliases": [
+        "free-space hand motion",
+        "move to a pregrasp pose",
+        "move held payload in free space"
+      ],
+      "examples": [
+        "Move the selected hand to the supplied pregrasp pose without contact."
+      ],
+      "not_equivalent": [
+        "whole-robot navigation",
+        "completed grasp",
+        "contact-constrained motion"
+      ],
+      "prerequisite_skills": []
+    },
+    "controlled_release_object": {
+      "description_en": "Progressively unload, open the selected hand and break contact only after support or a receiving grasp has been verified. The source marks this as requiring iterative development.",
+      "aliases": [
+        "gradual release",
+        "controlled unloading",
+        "progressively release grasp"
+      ],
+      "examples": [
+        "Gradually release the object after its support is confirmed."
+      ],
+      "not_equivalent": [
+        "uncontrolled drop",
+        "assume the other hand is holding"
+      ],
+      "prerequisite_skills": []
+    },
+    "translate_with_contact_constraint": {
+      "description_en": "Translate the target under a supplied contact-mode, path or axis, and force/torque constraint. Do not infer missing motion geometry or limits.",
+      "aliases": [
+        "接触约束平移",
+        "contact-constrained translation"
+      ],
+      "examples": [
+        "Translate the target along the supplied constrained trajectory."
+      ],
+      "not_equivalent": [
+        "free-space movement",
+        "invent a contact force or axis",
+        "guaranteed completion of an entire composite task"
+      ],
+      "prerequisite_skills": []
+    },
+    "rotate_with_contact_constraint": {
+      "description_en": "Rotate the target under a supplied contact-mode, path or axis, and force/torque constraint. Do not infer missing motion geometry or limits.",
+      "aliases": [
+        "接触约束旋转",
+        "contact-constrained rotation"
+      ],
+      "examples": [
+        "Rotate the target along the supplied constrained trajectory."
+      ],
+      "not_equivalent": [
+        "free-space movement",
+        "invent a contact force or axis",
+        "guaranteed completion of an entire composite task"
+      ],
+      "prerequisite_skills": []
+    },
+    "follow_surface_contact": {
+      "description_en": "Follow a supplied tangential path on a surface while maintaining the specified normal contact and force constraints.",
+      "aliases": [
+        "surface following",
+        "wipe along a surface",
+        "scrub",
+        "scrape",
+        "spread material"
+      ],
+      "examples": [
+        "Follow the supplied wiping path while maintaining the required contact."
+      ],
+      "not_equivalent": [
+        "claim the surface is clean without inspection",
+        "unconstrained free-space motion"
+      ],
+      "prerequisite_skills": []
+    }
+  },
+  "catalogue_source_version": "0.2.0"
+}

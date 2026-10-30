@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "object_tag": "table",
+    "caption": "Synthetic demonstration table.",
+    "bbox_center": [
+      1.0,
+      2.0,
+      0.8
+    ],
+    "bbox_extent": [
+      1.0,
+      1.0,
+      0.8
+    ]
+  },
+  {
+    "id": 2,
+    "object_tag": "chair",
+    "caption": "Synthetic demonstration chair.",
+    "bbox_center": [
+      3.0,
+      2.0,
+      0.5
+    ],
+    "bbox_extent": [
+      0.5,
+      0.5,
+      1.0
+    ]
+  }
+]

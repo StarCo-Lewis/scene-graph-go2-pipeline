@@ -1,0 +1,31 @@
+{
+  "received_date": "2026-10-30",
+  "source": "User-provided navigation group materials; copied unchanged",
+  "files": [
+    {
+      "path": "embodied_pipeline\\ui\\assets\\navigation_619\\619_map_v1_clean_5cm.npz",
+      "sha256": "bc56e8d1e48fd363101723d10c5e392d22b40f65c8729fe88b11a0c8bf37effd",
+      "bytes": 191200
+    },
+    {
+      "path": "embodied_pipeline\\ui\\assets\\navigation_619\\origin_reference.jpg",
+      "sha256": "8b43f49fc73896a9da5aa3aa721419df8efcdc83f0255bd35e9e3ac38627c916",
+      "bytes": 121430
+    },
+    {
+      "path": "embodied_pipeline\\deployment\\navigation_view_reference\\live_view.py",
+      "sha256": "13f9f7ce870a54ef49ea0485c43c075f377c6ec9b7a912718573614ae6fa154a",
+      "bytes": 10876
+    },
+    {
+      "path": "embodied_pipeline\\deployment\\navigation_view_reference\\replay_view.py",
+      "sha256": "5e92c9736d420857e0554733137085a1199ea6924a0843724ef9bd6c32cee5c2",
+      "bytes": 6668
+    },
+    {
+      "path": "embodied_pipeline\\deployment\\navigation_view_reference\\给组2_可视化使用说明.md",
+      "sha256": "14f3f018dda34d40638335087812468606b58b191dca470e2d63e8a8a92d3bf7",
+      "bytes": 7392
+    }
+  ]
+}
