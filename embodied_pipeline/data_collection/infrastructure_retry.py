@@ -7,6 +7,7 @@ import shutil
 
 from . import batch,natural_batch
 from .batch import read,read_jsonl,write,jsonl,sha
+from .plan_artifact import has_complete
 
 VERSION='natural_infrastructure_retry_v1'
 EXPECTED={'scene200':128,'scene202':112,'d3_619':90}
@@ -34,7 +35,8 @@ def prepare(source,output):
             summary_path=folder/'model_run/planning_summary.json';summary=read(summary_path)
             kind=failure_kind(summary)
             if not kind:continue
-            if (folder/'model_run/engineering_plan.json').exists():raise ValueError('Unexpected completed plan in infrastructure retry selection')
+            # Failed attempts carry an incomplete engineering_plan.json; only a complete plan is unexpected.
+            if has_complete(folder/'model_run/engineering_plan.json'):raise ValueError('Unexpected completed plan in infrastructure retry selection')
             if task!=read(folder/'task.json'):raise ValueError('Source task copies differ')
             chosen.append(task)
             lineage.append({'record_id':task['record_id'],'scene_id':scene,'attempt_id':'infra_retry_01',

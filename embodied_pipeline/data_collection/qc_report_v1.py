@@ -8,6 +8,7 @@ import json
 import shutil
 
 from .batch import read, read_jsonl, write, jsonl, sha
+from .plan_artifact import has_complete
 from .qc_rules_v1 import SCENES
 
 STAGES = {'D': '任务分解', 'B': '物体绑定', 'S': '技能绑定', 'E': '最终工程JSON'}
@@ -54,7 +55,7 @@ def assemble(root):
         review = read(review_path)
         methods[scene] = {k: v for k, v in review.items() if k != 'records'}
         candidates = read_jsonl(root / 'cases' / scene / 'tasks.jsonl')
-        expected = {t['record_id'] for t in candidates if (root / 'cases' / scene / 'tasks' / t['record_id'] / 'model_run/engineering_plan.json').exists()}
+        expected = {t['record_id'] for t in candidates if has_complete(root / 'cases' / scene / 'tasks' / t['record_id'] / 'model_run/engineering_plan.json')}
         rows = review['records']
         assert len(rows) == len(expected) and {r['record_id'] for r in rows} == expected, f'Incomplete review: {scene}'
         for reviewed in rows:

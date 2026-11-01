@@ -201,11 +201,13 @@ def write_delivery_docs(root: Path, config: dict):
     actual_references = list((root / "cases").glob("*/tasks/*/reference.json"))
     raw_responses = list((root / "cases").glob("*/tasks/*/model_run/llm_response_audit/*_http_*.json"))
     plans = list((root / "cases").glob("*/tasks/*/model_run/engineering_plan.json"))
+    from .plan_artifact import has_complete
     inventory = {"schema_version": VERSION, "prepared_at_utc": config.get("prepared_at_utc"),
         "requested_scene_count": len(config.get("scenes", {})),
         "requested_per_scene": config.get("requested_per_scene"),
         "actual_task_files": len(actual_tasks), "actual_reference_files": len(actual_references),
         "actual_http_response_files": len(raw_responses), "actual_engineering_plan_files": len(plans),
+        "actual_complete_engineering_plans": sum(has_complete(p) for p in plans),
         "count_unit": "One independent task record. HTTP files, frames, steps and objects do not add records.",
         "prepared_does_not_mean_run": True, "valid_sample_count": None,
         "source_permissions": "Pending review; copying does not grant redistribution or training rights.",

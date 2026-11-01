@@ -1,24 +1,52 @@
 {
-  "version": "2026-10-30",
-  "kind": "github_source_release",
-  "created_utc": "2026-10-30T12:22:07.854867+00:00",
-  "robot_commands_sent": false,
-  "paid_api_called": false,
+  "version": "2026-11-01-u87-semantics-source-v1",
+  "kind": "github_source_snapshot",
+  "status": "prepared_for_user_commit_not_pushed_not_deployed",
+  "created_utc": "2026-11-01T13:01:57.726Z",
+  "rc_reference": {
+    "version": "2026-10-31-u87-instruction-v2-rc1",
+    "base_public_commit": "fa1354f0fe73901f6bd49ab4a62549ccd01d5f1b",
+    "manifest_files_verified": 414,
+    "original_zip_sha_independently_verified": false,
+    "port_method": "Current files already retain U87; no RC runtime overlay; retain later semantic audits"
+  },
+  "runtime_files_final_sha256": {
+    "tools/prepare_graph_task.py": "9f6f057ac989786631b675c02de7d843fd6d92275739be17d6ebeaac30ba9878",
+    "embodied_pipeline/ui/field_backend.py": "0e05326df71155b24eb0c666a6a10508633e403fd4d33d301eb64686adfec189",
+    "embodied_pipeline/orchestration/real_scene_plan.py": "0150e97cb173009d2efd85f99783d4f68861f83eacb83d6363d9272ff14f44bc"
+  },
+  "validation": {
+    "new_offline_tests": 25,
+    "seconds": 1.074,
+    "result": "OK",
+    "suites": [
+      "embodied_pipeline.tests.test_field_console",
+      "embodied_pipeline.tests.test_real_scene_plan"
+    ],
+    "initial_attempt": "system temporary directory permissions failed; same suites passed with project-local TEMP/TMP; source unchanged",
+    "full_suite_rerun": false,
+    "internet_access": false,
+    "model_calls": 0,
+    "wsl_started": false,
+    "robot_commands_sent": false
+  },
   "secret_scan": {
     "rules": [
       "private_key",
       "api_token",
-      "literal_credential"
+      "credential_assignment"
     ],
     "findings": 0,
-    "scope": "Allowlisted text; heuristic, not a security guarantee"
+    "scope": "allowlisted text files; heuristic scan"
   },
   "excluded": [
-    "credentials and .token",
-    "real maps/point clouds/scene datasets",
-    "historical raw runs",
-    "models and environments",
-    "third-party navigation/CAPO server implementation"
+    ".git",
+    "credentials",
+    "private maps and scene assets",
+    "weights",
+    "real run records",
+    "research evidence archive",
+    "test temporary directories"
   ],
   "files": [
     {
@@ -28,8 +56,13 @@
     },
     {
       "path": ".gitignore",
-      "bytes": 13465,
-      "sha256": "8b4680c7cccf9065649e4b90c8a33cb8185723a371cf9c3b00aa8076bfbe2e50"
+      "bytes": 13742,
+      "sha256": "c2bb30bc7abaf46da5f8d06eecfea515d284454e738d692e53dfe795e401136e"
+    },
+    {
+      "path": "docs/GitHub更新步骤_20261101.md",
+      "bytes": 1241,
+      "sha256": "2618dd9fd96c7dbae6a199391832fc5de81b69a850ac637dadecfcc0ebdafa69"
     },
     {
       "path": "docs/GO补丁说明.md",
@@ -37,29 +70,19 @@
       "sha256": "999dea06b3fd7d62a05ab92d2f25e0f0b87d6c24b55217b0cb5cf084e369659b"
     },
     {
+      "path": "docs/metadata补丁与符号小批验证.md",
+      "bytes": 5461,
+      "sha256": "004fc75995f18d4031038b8d294613cf99e1587d498ec22e9d8fc3d83d1c5ef1"
+    },
+    {
       "path": "docs/图到工程JSON说明.md",
       "bytes": 9694,
       "sha256": "9b9789028d01b979325111ddc5b7e95e695b1af021804cba4a2a16c8b2b8310e"
     },
     {
-      "path": "embodied_pipeline/__init__.py",
-      "bytes": 108,
-      "sha256": "d8485ba668269e6667469652af60257d31804e3971840241db8472f9493e3c40"
-    },
-    {
-      "path": "embodied_pipeline/__main__.py",
-      "bytes": 2661,
-      "sha256": "c0954c5876ca0ceb395fa527c5310e259079f2f855babb48f07e8964d30efdb9"
-    },
-    {
-      "path": "embodied_pipeline/_legacy.py",
-      "bytes": 1709,
-      "sha256": "99e5781f2828764dfa0749ca52ea77084f0fef41f376b43cb3279400b264ef6d"
-    },
-    {
-      "path": "embodied_pipeline/contracts/__init__.py",
-      "bytes": 1574,
-      "sha256": "6e34d8ddd5186dc73092591ec26bab1840b2d44fec56290f6453f4cdcfb074ed"
+      "path": "docs/版本更新_20261101.md",
+      "bytes": 4212,
+      "sha256": "e9cf2e0d628df9ff8daaae59346edb52fc86b8274005458e3ad82db6b6608e34"
     },
     {
       "path": "embodied_pipeline/contracts/README.md",
@@ -67,14 +90,14 @@
       "sha256": "d6b581397c1d19c6213a5ed188188997fc331e0deb663f8e785b4af800d6c401"
     },
     {
-      "path": "embodied_pipeline/data_collection/__init__.py",
-      "bytes": 76,
-      "sha256": "3ba24cf7abefd9119a6d984e88ae2b6692f167253c8257afb55ad9e237feea4e"
+      "path": "embodied_pipeline/contracts/__init__.py",
+      "bytes": 1574,
+      "sha256": "6e34d8ddd5186dc73092591ec26bab1840b2d44fec56290f6453f4cdcfb074ed"
     },
     {
       "path": "embodied_pipeline/data_collection/batch.py",
-      "bytes": 40902,
-      "sha256": "13b601c6309149184d86c6b67a0251714cfe82bba7838d81d39c3e10ffea22ce"
+      "bytes": 41200,
+      "sha256": "e207837c67979a1c168b2b0fa700457d6eebf857a1e4a221a7d0f26ef282d4a7"
     },
     {
       "path": "embodied_pipeline/data_collection/catalog.py",
@@ -88,13 +111,13 @@
     },
     {
       "path": "embodied_pipeline/data_collection/delivery.py",
-      "bytes": 29994,
-      "sha256": "93110de74d3f81d8c75eef566706576d2d67441929e59ce1ed7a5be4843d26b1"
+      "bytes": 30120,
+      "sha256": "4fd71d269ede946f5dcdb31ab5bc93715bd4a260294808d8fefdfd9d5c531e5f"
     },
     {
       "path": "embodied_pipeline/data_collection/infrastructure_retry.py",
-      "bytes": 5123,
-      "sha256": "c4af5fd9820d6e46d878c2fad4ad747c9c63c413baa9972ce4903ad53351933d"
+      "bytes": 5275,
+      "sha256": "3242b7889cc35e50e87d09db95ca911f8c63854d0faa82e4e17b57acbd17cc3f"
     },
     {
       "path": "embodied_pipeline/data_collection/instruction_input_audit.py",
@@ -108,8 +131,8 @@
     },
     {
       "path": "embodied_pipeline/data_collection/natural_batch.py",
-      "bytes": 10590,
-      "sha256": "a82835d441dbd68267b441a734618ac2dfe5bb31c1929962cae81c89c042a90b"
+      "bytes": 11199,
+      "sha256": "3e0089c5f48e13d55a3bb03c281c8b3ffbfbc1f6bcc32b571e88a380da5329cc"
     },
     {
       "path": "embodied_pipeline/data_collection/natural_instruction_draft_v2.py",
@@ -122,19 +145,24 @@
       "sha256": "a3e12e2237f69553730965f43d9913f6510ce157ba2a19793bd3566ac4045634"
     },
     {
+      "path": "embodied_pipeline/data_collection/plan_artifact.py",
+      "bytes": 1785,
+      "sha256": "9b82288969490d2126c13644175151d82b55fc3d904f6aab1be084d07e6e0872"
+    },
+    {
       "path": "embodied_pipeline/data_collection/qc_cause_analysis_v1.py",
-      "bytes": 30046,
-      "sha256": "565d17a1774a69e3591c7bc6d6badc90d2e3603b0b4e91239ed04ba23e8febb3"
+      "bytes": 30122,
+      "sha256": "86c1b7fcee9cb52f75377e2211cb4ccc65b811ede776067b9f14f09761292604"
     },
     {
       "path": "embodied_pipeline/data_collection/qc_report_v1.py",
-      "bytes": 16261,
-      "sha256": "e27dca2aa35010ec9b6ae0208e787506394ebef585d4d04a8e22806e33518678"
+      "bytes": 16304,
+      "sha256": "929d930414e538d786d1535c8270aacce3367ec2bd04a94f6fab95f8df865441"
     },
     {
       "path": "embodied_pipeline/data_collection/qc_rules_v1.py",
-      "bytes": 13987,
-      "sha256": "7b3d39d1c36b2fcf11ab5567a1cd23c0ee4d59de6c777dd1acaaf2c360df8f76"
+      "bytes": 14289,
+      "sha256": "1916375988eb29ebb6af0141f4ae96bab4aafa004f3cf996082cf2a53c73f52a"
     },
     {
       "path": "embodied_pipeline/data_collection/quality.py",
@@ -167,9 +195,19 @@
       "sha256": "0c439a41e616fc8ccfd9644f2edcbdad808e08aaeb3c7017afe24873deef454d"
     },
     {
+      "path": "embodied_pipeline/data_collection/run_symbolic_pilot.sh",
+      "bytes": 1163,
+      "sha256": "1b92bb6eb1723f4e9c259a363228113b8794d1f820c2bc5a4d18fca348fc0f6e"
+    },
+    {
       "path": "embodied_pipeline/data_collection/summarize_selected.py",
-      "bytes": 11280,
-      "sha256": "9c03c2930c29fe02b1d0cbcf7fc30be8990568a6c15216d35c8a9920476f1860"
+      "bytes": 11417,
+      "sha256": "f43831c9fd931cf447ab518335c7445779e967c887c3f34cd72425716d9a3762"
+    },
+    {
+      "path": "embodied_pipeline/data_collection/symbolic_pilot.py",
+      "bytes": 13169,
+      "sha256": "4a344c53ccd7ee0932b516c8e6f08c2d6e786adf7fd134b9250d10822e4a82c1"
     },
     {
       "path": "embodied_pipeline/data_collection/test_qc_rules_v1.py",
@@ -180,6 +218,11 @@
       "path": "embodied_pipeline/data_collection/test_summary_selected.py",
       "bytes": 3002,
       "sha256": "7fe95dbc9f7b1d1063d58320130c1a3b650948f9445670bd14bceb9e941d6747"
+    },
+    {
+      "path": "embodied_pipeline/data_collection/__init__.py",
+      "bytes": 76,
+      "sha256": "3ba24cf7abefd9119a6d984e88ae2b6692f167253c8257afb55ad9e237feea4e"
     },
     {
       "path": "embodied_pipeline/deployment/check_ros2_environment.py",
@@ -272,11 +315,6 @@
       "sha256": "bcbcfad6a243b625e3ea4c2e02a543cb38f6a4d80b498a343de1a25aa7a0fe08"
     },
     {
-      "path": "embodied_pipeline/execution/__init__.py",
-      "bytes": 1995,
-      "sha256": "bf65c087ec2a4297b4ba2c405f2db70b89fa7f4f3224be277628f4ba76ae2102"
-    },
-    {
       "path": "embodied_pipeline/execution/CONTROLLER_DISPATCH.md",
       "bytes": 10176,
       "sha256": "a1dc9e322b3497e6441eeca3a23336cbd0395c271bf89459a8889327a1215229"
@@ -347,9 +385,9 @@
       "sha256": "172f46f2f3ea916e3161c88ea6b2be33a4b1087a325d4d3811d7e494854c234c"
     },
     {
-      "path": "embodied_pipeline/instruction_skills/__init__.py",
-      "bytes": 621,
-      "sha256": "5b792409702534c7b7e23df6a4863b7516097d8b7e4e3ef7fb6b487c791b7dd3"
+      "path": "embodied_pipeline/execution/__init__.py",
+      "bytes": 1995,
+      "sha256": "bf65c087ec2a4297b4ba2c405f2db70b89fa7f4f3224be277628f4ba76ae2102"
     },
     {
       "path": "embodied_pipeline/instruction_skills/candidate_policy.py",
@@ -360,6 +398,11 @@
       "path": "embodied_pipeline/instruction_skills/full_inventory.py",
       "bytes": 1322,
       "sha256": "5b399b47ed91267e52e53da62ae0fa624e0c4dc0124ed8ab9cd74ccc04b18fe6"
+    },
+    {
+      "path": "embodied_pipeline/instruction_skills/__init__.py",
+      "bytes": 621,
+      "sha256": "5b792409702534c7b7e23df6a4863b7516097d8b7e4e3ef7fb6b487c791b7dd3"
     },
     {
       "path": "embodied_pipeline/introspection.py",
@@ -375,11 +418,6 @@
       "path": "embodied_pipeline/memory/__init__.py",
       "bytes": 2534,
       "sha256": "26446017eb1a78f9ec89b08773f04344d01d134fa0034471513c1beda54745e7"
-    },
-    {
-      "path": "embodied_pipeline/orchestration/__init__.py",
-      "bytes": 202,
-      "sha256": "8c2e4bb40ae7b059c30a3ddf4faba41e940221554f013a48a7dd25ea1e358388"
     },
     {
       "path": "embodied_pipeline/orchestration/batch.py",
@@ -428,8 +466,8 @@
     },
     {
       "path": "embodied_pipeline/orchestration/real_scene_plan.py",
-      "bytes": 17896,
-      "sha256": "a06c9c534243fcd4e46cde43c1605b0c2b0771b4c17e2670cafdfd8bbcec831e"
+      "bytes": 19638,
+      "sha256": "0150e97cb173009d2efd85f99783d4f68861f83eacb83d6363d9272ff14f44bc"
     },
     {
       "path": "embodied_pipeline/orchestration/real_scene_rebuild.py",
@@ -448,13 +486,13 @@
     },
     {
       "path": "embodied_pipeline/orchestration/task_collection_worker.py",
-      "bytes": 20614,
-      "sha256": "a562e6ca3bb847016cfd77636b898df8ef3706132ec17260aef21cd8011f5a97"
+      "bytes": 44811,
+      "sha256": "d184a91aea296bdec7ba283757c9a372cfda5e18b1744a178f9669f426e9f353"
     },
     {
-      "path": "embodied_pipeline/perception/__init__.py",
-      "bytes": 574,
-      "sha256": "e6b2a81c055172d9d541af1e69374bd9f3fa731039f18db75065ee9ff3c90fbe"
+      "path": "embodied_pipeline/orchestration/__init__.py",
+      "bytes": 202,
+      "sha256": "8c2e4bb40ae7b059c30a3ddf4faba41e940221554f013a48a7dd25ea1e358388"
     },
     {
       "path": "embodied_pipeline/perception/caption_cache.py",
@@ -517,9 +555,9 @@
       "sha256": "988ceecc2564e9b746b2d67afe54145c98bbfe75df35236a2e76b8a95e5e20ba"
     },
     {
-      "path": "embodied_pipeline/planning/__init__.py",
-      "bytes": 469,
-      "sha256": "265b50d38718a2db45dba8346d95add8337255193c430f0cb2b46a63088f5792"
+      "path": "embodied_pipeline/perception/__init__.py",
+      "bytes": 574,
+      "sha256": "e6b2a81c055172d9d541af1e69374bd9f3fa731039f18db75065ee9ff3c90fbe"
     },
     {
       "path": "embodied_pipeline/planning/intent_alignment_worker.py",
@@ -528,8 +566,8 @@
     },
     {
       "path": "embodied_pipeline/planning/intent_prompt.py",
-      "bytes": 2752,
-      "sha256": "c4fa00f7a6bdbebea0f6a399d0320ed9769d9e38fe29cd254cc147a4bf2d37a2"
+      "bytes": 3521,
+      "sha256": "24879f54f250ec905e6509d65de02ab54d077277f7a01d9c2084ba99c88a43ef"
     },
     {
       "path": "embodied_pipeline/planning/process_contract.py",
@@ -537,14 +575,14 @@
       "sha256": "3e0fc5d8e4f10fe3521e9de9d4094e6e05051e3775505ab97889fd90b48286dc"
     },
     {
+      "path": "embodied_pipeline/planning/__init__.py",
+      "bytes": 469,
+      "sha256": "265b50d38718a2db45dba8346d95add8337255193c430f0cb2b46a63088f5792"
+    },
+    {
       "path": "embodied_pipeline/README.md",
       "bytes": 8699,
       "sha256": "0bb6738a6a913c0766ff80fbe81ac18c656b1c9180db6740cb2dcff42d679010"
-    },
-    {
-      "path": "embodied_pipeline/tests/__init__.py",
-      "bytes": 77,
-      "sha256": "0dfee80582707040fd6b41fcf6b589a79c1300b85f306dc2d0bc8b0711eb747a"
     },
     {
       "path": "embodied_pipeline/tests/test_api_planner.py",
@@ -612,9 +650,14 @@
       "sha256": "1269ec9fed99b2008dc0cb1b181572e12f51f77538d84a560ac341343dd2e608"
     },
     {
+      "path": "embodied_pipeline/tests/test_engineering_plan_delivery.py",
+      "bytes": 24063,
+      "sha256": "71180b261bf85c1472c7ec6cf58e9ffe2d2a7c13d145f76dfb9713bcccc641c3"
+    },
+    {
       "path": "embodied_pipeline/tests/test_field_console.py",
-      "bytes": 5764,
-      "sha256": "5512c1cc81d5992e57888f7087fc74f848830ea00fe9e96cb8183e1386a74c2e"
+      "bytes": 6610,
+      "sha256": "4a1f512fc0da034dc6602dc3081ac5b5e632772451fc3ed8a762b1a03454a42f"
     },
     {
       "path": "embodied_pipeline/tests/test_full_inventory.py",
@@ -628,8 +671,8 @@
     },
     {
       "path": "embodied_pipeline/tests/test_intent_comparison.py",
-      "bytes": 12897,
-      "sha256": "071794842d149b4b793307ad8ea442830813638414d1551141e078a917461ada"
+      "bytes": 17499,
+      "sha256": "d2694b8e1c6bf978f223eba94380e1725566597db77a405611b95310684b4c61"
     },
     {
       "path": "embodied_pipeline/tests/test_multi_navigation.py",
@@ -667,6 +710,11 @@
       "sha256": "395501534f30b3eae6aaa3e89f015530d41a0ce6bc67b9a907de307a9124c1b0"
     },
     {
+      "path": "embodied_pipeline/tests/test_plan_semantics.py",
+      "bytes": 16758,
+      "sha256": "9b2671f9f1215acb0326bf85e7fb572843c9eb8ca453916980d8d18d3a81081a"
+    },
+    {
       "path": "embodied_pipeline/tests/test_process_constraints.py",
       "bytes": 13698,
       "sha256": "eef04a80c334dd83febc22d82e9924eadeb369ba5f16069625d79b17f6653f2d"
@@ -683,8 +731,8 @@
     },
     {
       "path": "embodied_pipeline/tests/test_real_scene_plan.py",
-      "bytes": 9606,
-      "sha256": "e665799cf1b33fd8db77cb2a53d8cb554b762ff41c4cb6c73ceed1b72169d71b"
+      "bytes": 11192,
+      "sha256": "9490aba561f9056f918b2573e0e4ab0ff8cbfdece2dc141fd1aad535669bcca3"
     },
     {
       "path": "embodied_pipeline/tests/test_real_scene_rebuild.py",
@@ -702,9 +750,14 @@
       "sha256": "2f8678112ed46c4eb16e842e8da8da146df123772cb63740fdc74debe2be4a11"
     },
     {
+      "path": "embodied_pipeline/tests/test_symbolic_pilot.py",
+      "bytes": 7072,
+      "sha256": "cf725f96086b08d689e1602c499aad520676b0a180700ec515c5080dc72b49d7"
+    },
+    {
       "path": "embodied_pipeline/tests/test_task_collection_worker.py",
-      "bytes": 10760,
-      "sha256": "0f187016395d5696739220b078ed8bca0e451a98b7b98dcc074362d1121b57fa"
+      "bytes": 12827,
+      "sha256": "9671183f0202862471d430692edf1c521e3d651e82bc65f5fb9f3a72771151f7"
     },
     {
       "path": "embodied_pipeline/tests/test_tcp_navigation.py",
@@ -717,9 +770,9 @@
       "sha256": "0a6b5294376fcbf16b0fcb17bea7cdc176438ff1d5d56f2142e449c9a4aab5ca"
     },
     {
-      "path": "embodied_pipeline/ui/__init__.py",
-      "bytes": 83,
-      "sha256": "f465f0593eb27baef2a47ea7a880c56177ef225b13f471b1aefc82df702e03eb"
+      "path": "embodied_pipeline/tests/__init__.py",
+      "bytes": 77,
+      "sha256": "0dfee80582707040fd6b41fcf6b589a79c1300b85f306dc2d0bc8b0711eb747a"
     },
     {
       "path": "embodied_pipeline/ui/api_controls.py",
@@ -733,8 +786,8 @@
     },
     {
       "path": "embodied_pipeline/ui/field_backend.py",
-      "bytes": 8732,
-      "sha256": "23834f9cf0636bc2b350a6ee34b3f1c68464410120dbeddbadaa9a3237905c92"
+      "bytes": 8949,
+      "sha256": "0e05326df71155b24eb0c666a6a10508633e403fd4d33d301eb64686adfec189"
     },
     {
       "path": "embodied_pipeline/ui/field_console.py",
@@ -772,6 +825,11 @@
       "sha256": "79ee2c75510379e10b094ce8b7bd1a1307cb911b5c911085567e08e1ba328bef"
     },
     {
+      "path": "embodied_pipeline/ui/__init__.py",
+      "bytes": 83,
+      "sha256": "f465f0593eb27baef2a47ea7a880c56177ef225b13f471b1aefc82df702e03eb"
+    },
+    {
       "path": "embodied_pipeline/ui/客户端使用手册.md",
       "bytes": 30552,
       "sha256": "bed56cf23b1d2f78d30178bc62181c36834c2565810b034c6d4323f08c9fcd77"
@@ -782,14 +840,34 @@
       "sha256": "b65cc51490ef7e2c8f91926ac739c4d7630493d57445becab2835598e27ab859"
     },
     {
-      "path": "embodied_pipeline/validation/__init__.py",
-      "bytes": 1131,
-      "sha256": "b54fad284ea478f97bb6c7e107a8f07fafc03d16a755c0cbae32112fc7cc9de3"
+      "path": "embodied_pipeline/validation/plan_semantics.py",
+      "bytes": 11930,
+      "sha256": "014cc76384aebd3850655c26ac757aa0afc990b9d44cabd402dc795ec9bd8c41"
     },
     {
       "path": "embodied_pipeline/validation/process_constraints.py",
       "bytes": 3659,
       "sha256": "ce2b8e69365996b77386c1532b0ed6951eeee19ecadd6090bd45f8998ab62570"
+    },
+    {
+      "path": "embodied_pipeline/validation/__init__.py",
+      "bytes": 1131,
+      "sha256": "b54fad284ea478f97bb6c7e107a8f07fafc03d16a755c0cbae32112fc7cc9de3"
+    },
+    {
+      "path": "embodied_pipeline/_legacy.py",
+      "bytes": 1709,
+      "sha256": "99e5781f2828764dfa0749ca52ea77084f0fef41f376b43cb3279400b264ef6d"
+    },
+    {
+      "path": "embodied_pipeline/__init__.py",
+      "bytes": 108,
+      "sha256": "d8485ba668269e6667469652af60257d31804e3971840241db8472f9493e3c40"
+    },
+    {
+      "path": "embodied_pipeline/__main__.py",
+      "bytes": 2661,
+      "sha256": "c0954c5876ca0ceb395fa527c5310e259079f2f855babb48f07e8964d30efdb9"
     },
     {
       "path": "examples/synthetic_scene/scene_graph.json",
@@ -902,14 +980,14 @@
       "sha256": "1a33c686b154082e79963f0a2a6244986b3c8be26cc91e15166299023788c962"
     },
     {
-      "path": "outputs/habitat_demo_v1/plan_live_round.py",
-      "bytes": 24985,
-      "sha256": "a12b63c1f88e0f6effe571a7e8fe9eee55fedce8881a0165d29142df7bd76685"
-    },
-    {
       "path": "outputs/habitat_demo_v1/planning_start_contract.py",
       "bytes": 6275,
       "sha256": "a38bfd938cab59e8058331aa46f78fcaed56b457591c39410a71a9d798da9bd5"
+    },
+    {
+      "path": "outputs/habitat_demo_v1/plan_live_round.py",
+      "bytes": 24985,
+      "sha256": "a12b63c1f88e0f6effe571a7e8fe9eee55fedce8881a0165d29142df7bd76685"
     },
     {
       "path": "outputs/habitat_demo_v1/preservation_constraints.py",
@@ -950,6 +1028,11 @@
       "path": "outputs/habitat_demo_v1/robot_motion_interface.py",
       "bytes": 6406,
       "sha256": "4fee34dade4b6c09c09e79c678397a46be2f68e8e321269e54967cc76256019c"
+    },
+    {
+      "path": "outputs/habitat_demo_v1/runtime_constraints.py",
+      "bytes": 3372,
+      "sha256": "cd47ee665a147892cabedaefeac705d630a6cbab26750c4cc5c537574a7a2e9c"
     },
     {
       "path": "outputs/habitat_demo_v1/run_action_matrix_ab.py",
@@ -1085,11 +1168,6 @@
       "path": "outputs/habitat_demo_v1/run_task_level_regression.py",
       "bytes": 6301,
       "sha256": "eecb2698f88e36a857cacd2ab71d1b215cf1ac4bc12ded3e61e362cc2a56608b"
-    },
-    {
-      "path": "outputs/habitat_demo_v1/runtime_constraints.py",
-      "bytes": 3372,
-      "sha256": "cd47ee665a147892cabedaefeac705d630a6cbab26750c4cc5c537574a7a2e9c"
     },
     {
       "path": "outputs/habitat_demo_v1/semantic_redundancy.py",
@@ -1432,6 +1510,11 @@
       "sha256": "4615861ac5e4d00330d332f22cd257354f4252a4b307f2361cc158aaa64d1ce1"
     },
     {
+      "path": "outputs/object_alignment_v1/runtime_goal_protocol.py",
+      "bytes": 7446,
+      "sha256": "e23496a63671ed401f9788eb5f46d215484b5c14dfedcc2926cb38b98057fa2c"
+    },
+    {
       "path": "outputs/object_alignment_v1/run_graph_binding_regression.py",
       "bytes": 3503,
       "sha256": "a069b740d04229d1417f1bf9136e0584a2cc2a6cc27567222c84bddc0cca59b6"
@@ -1450,11 +1533,6 @@
       "path": "outputs/object_alignment_v1/run_graph_relation_test.py",
       "bytes": 4578,
       "sha256": "90e93916b8618c1b4192cdeb2922c2b2142f1d732f2dbc2002d83dcc4ff3769d"
-    },
-    {
-      "path": "outputs/object_alignment_v1/runtime_goal_protocol.py",
-      "bytes": 7446,
-      "sha256": "e23496a63671ed401f9788eb5f46d215484b5c14dfedcc2926cb38b98057fa2c"
     },
     {
       "path": "outputs/object_alignment_v1/scene_input_interface.py",
@@ -2053,8 +2131,13 @@
     },
     {
       "path": "README.md",
-      "bytes": 11673,
-      "sha256": "4d6b221d303bab969d43152d457f09c35b49bdf171d22f64462c5fa2efd75361"
+      "bytes": 12707,
+      "sha256": "00c2a75625c65e4449ce930e3a31aa25cc1fa15019803e3d42b6cada6d93f661"
+    },
+    {
+      "path": "RELEASE_VERSION.txt",
+      "bytes": 35,
+      "sha256": "fed2ee25c785020de340c36cb4113dcc29b52cadb0574f9675e0e5a7064b8aab"
     },
     {
       "path": "requirements-planning.txt",
@@ -2067,9 +2150,29 @@
       "sha256": "27a4ee3805259dbd8fee22862a2a9385cbd406eae75e468397d626cbe8962407"
     },
     {
+      "path": "tools/extend_symbolic_pilot.py",
+      "bytes": 11137,
+      "sha256": "c91139079ad5664fb0913503cf376a753a3c85d0a9bd8fb0c0b1e258d86c410e"
+    },
+    {
       "path": "tools/prepare_graph_task.py",
-      "bytes": 2577,
-      "sha256": "4a9ce94c35a16212c1e1d39415588779666102d87a792773abe7f53e3c742325"
+      "bytes": 2675,
+      "sha256": "9f6f057ac989786631b675c02de7d843fd6d92275739be17d6ebeaac30ba9878"
+    },
+    {
+      "path": "tools/regression_symbolic30_audit.py",
+      "bytes": 10538,
+      "sha256": "1504c119dbe30745815d60c2ec9ae370995907001791b842c23c680dcef01bb2"
+    },
+    {
+      "path": "tools/review_symbolic30.py",
+      "bytes": 24831,
+      "sha256": "c0919c3d8b7e56660e9e486dcc5d8fa8c5a66ff125ff7b31573dba4adc6cdd83"
+    },
+    {
+      "path": "tools/run_symbolic_extension18.sh",
+      "bytes": 1057,
+      "sha256": "ddd941fd6ff7083723600464fcd6b5d8d21bd04733ae8f4c085546417772ca56"
     },
     {
       "path": "tools/verify_release.py",
@@ -2078,8 +2181,8 @@
     },
     {
       "path": "发布检查说明.md",
-      "bytes": 1037,
-      "sha256": "d051ffa2a8b8adbdd42db5bde12fb718e0c18b9f9daa2213a5843691b6694a1a"
+      "bytes": 1293,
+      "sha256": "2f0cd8b90cefce8699f2fefed08fb396d6f9a4ca36edccfa048f568d73c1e0bd"
     },
     {
       "path": "启动D3619现场窗口.cmd",
@@ -2091,6 +2194,5 @@
       "bytes": 126,
       "sha256": "90bcb9098af72783725976c8617a75ab81a9765b329d30da4f9f05143b3504a0"
     }
-  ],
-  "documentation_revision": "v2_client_path_migration"
+  ]
 }

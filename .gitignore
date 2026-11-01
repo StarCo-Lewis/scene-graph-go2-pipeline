@@ -280,3 +280,11 @@ work/
 !/outputs/vlm_full_scene_v1/test_typed9_integration.py
 !/outputs/vlm_full_scene_v1/two_scene_stress_cases.py
 !/outputs/vlm_full_scene_v1/validate_evidence.py
+
+# Current top-level engine source dependencies; runtime subdirectories stay ignored.
+!/outputs/habitat_demo_v1/*.py
+!/outputs/object_alignment_v1/*.py
+!/outputs/skill_matching_v1/*.py
+!/outputs/llm_audit_v1/*.py
+!/outputs/scene_memory_v1/*.py
+!/outputs/vlm_full_scene_v1/*.py

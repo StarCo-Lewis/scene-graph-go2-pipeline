@@ -26,9 +26,21 @@ class BackendTests(unittest.TestCase):
             folder = b.create_task(self.scene, "Navigate to the table.")
         task = b.read(folder / "task.json")
         self.assertNotIn("target_element_id", task)
-        self.assertEqual(task["schema_version"], "real_scene_navigation_instruction_v1")
+        self.assertEqual(task["schema_version"], "real_scene_navigation_instruction_v2")
         self.assertEqual(task["scene_dir"], "scene")
         self.assertFalse((folder / "planning").exists())
+        self.assertEqual(task["scene_metadata_sha256"], b.sha(self.scene_dir / "scene_metadata.json"))
+
+    def test_metadata_changed_or_snapshot_missing_requires_reload(self):
+        stale = dict(self.scene)
+        stale.pop("metadata_hash")
+        with self.assertRaisesRegex(ValueError, "reload"):
+            b.create_task(stale, "Navigate to table ID 179.")
+        metadata = b.read(self.scene_dir / "scene_metadata.json")
+        metadata["scene_id"] = "changed_after_load"
+        (self.scene_dir / "scene_metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "reload"):
+            b.create_task(self.scene, "Navigate to table ID 179.")
 
     def test_no_silent_translation_or_empty_instruction(self):
         with self.assertRaises(ValueError):

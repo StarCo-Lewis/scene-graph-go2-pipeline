@@ -1,6 +1,8 @@
 """Offline evidence isolation and prompt-routing checks; no live API calls."""
 
 import copy
+import contextlib
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -9,12 +11,45 @@ import unittest
 from unittest.mock import patch
 
 from embodied_pipeline._legacy import load
-from embodied_pipeline import memory
+from embodied_pipeline import introspection, memory
 from embodied_pipeline.planning import intent_alignment_worker as worker
 from embodied_pipeline.planning.intent_prompt import ARMS, ADDENDUM, compose
 from embodied_pipeline.orchestration import intent_comparison as experiment
 from embodied_pipeline.orchestration import oracle_decomposition as oracle
 from embodied_pipeline.tests.test_oracle_decomposition import options
+
+
+FIXTURE_BASELINE = {"outputs/fixture_a.json": '{"fixture": "a"}\n',
+                    "outputs/fixture_b.json": '{"fixture": "b"}\n'}
+
+
+@contextlib.contextmanager
+def controlled_legacy_baseline(root, *, break_fixture=None, remove_fixture=None):
+    """Point verify_legacy at a temporary baseline instead of the workspace manifest.
+
+    The real verify_legacy still hashes every listed file; only the baseline moves, so
+    this offline test no longer fails when a production artifact is updated under a
+    separate review. Manifest paths are absolute because ROOT / absolute keeps the
+    absolute path, which leaves introspection.ROOT and write_run_manifest untouched.
+    """
+    base = Path(root) / "legacy_fixture"
+    entries = []
+    for relative, text in FIXTURE_BASELINE.items():
+        path = base / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+        entries.append(dict(path=str(path),
+                            sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
+    if break_fixture is not None:
+        (base / break_fixture).write_text('{"fixture": "edited offline"}\n', encoding="utf-8")
+    if remove_fixture is not None:
+        (base / remove_fixture).unlink()
+    manifest = Path(root) / "legacy_manifest_fixture.json"
+    manifest.write_text(json.dumps(dict(
+        scope="Offline test baseline over temporary fixtures; not the production manifest.",
+        files=entries), indent=2) + "\n", encoding="utf-8")
+    with patch.object(introspection, "MANIFEST", manifest):
+        yield base
 
 
 class IntentComparisonTests(unittest.TestCase):
@@ -112,7 +147,8 @@ class IntentComparisonTests(unittest.TestCase):
 
     def test_resume_skips_completed_failures_and_preserves_source(self):
         with tempfile.TemporaryDirectory() as tmp, \
-             patch("urllib.request.urlopen", side_effect=AssertionError("Live HTTP forbidden")):
+             patch("urllib.request.urlopen", side_effect=AssertionError("Live HTTP forbidden")), \
+             controlled_legacy_baseline(Path(tmp)):
             args = self.resume_fixture(Path(tmp))
             before = args.resume_from.read_bytes()
             keys, info = experiment.resume_selection(args)
@@ -121,6 +157,8 @@ class IntentComparisonTests(unittest.TestCase):
                 experiment=dict(profile=experiment.VERSION, arms=list(ARMS), **info),
                 input_names=experiment.INPUT_NAMES, branch_keys=keys), 0)
             summary = oracle.read(args.output_dir / "comparison_summary.json")
+            self.assertEqual(summary["legacy_integrity"]["status"], "unchanged")
+            self.assertEqual(summary["legacy_integrity"]["checked_file_count"], len(FIXTURE_BASELINE))
             self.assertEqual(summary["planned_branch_count"], 3)
             self.assertEqual({(r["case_id"], r["repeat"], r["arm"]) for r in summary["preflight"]}, keys)
             self.assertFalse(summary["fresh_llm_calls"])
@@ -181,7 +219,8 @@ class IntentComparisonTests(unittest.TestCase):
                 with patch.dict(os.environ, {"DASHSCOPE_API_KEY": "offline-placeholder"}), \
                      patch.object(retrieval, "model_fingerprint", return_value="offline"), \
                      patch.object(retrieval, "LocalEncoder") as encoder, \
-                     patch("urllib.request.urlopen", side_effect=AssertionError("Live HTTP forbidden")):
+                     patch("urllib.request.urlopen", side_effect=AssertionError("Live HTTP forbidden")), \
+                     controlled_legacy_baseline(root):
                     encoder.return_value.stats.return_value = {}
                     result = oracle.run(args, prepare=experiment.prepare_branch, execute=execute,
                         experiment=dict(profile=experiment.VERSION, arms=list(ARMS)),
@@ -201,6 +240,46 @@ class IntentComparisonTests(unittest.TestCase):
                     self.assertEqual(result, 2)
                     self.assertEqual(len(calls), 1)
                     self.assertEqual(saved["status"], "invalid_integrity" if failure == "mutation" else "harness_error")
+
+    def guard_args(self, root):
+        args = options(repeat=1, arms=list(ARMS), candidate_policy="full_inventory_no_cosine_v1",
+                       preflight_only=True, output_dir=root / "run")
+        args.case_ids = ["A11"]
+        return args
+
+    def test_unmodified_fixture_baseline_is_really_hashed_and_unchanged(self):
+        original_manifest = introspection.MANIFEST
+        original_root = introspection.ROOT
+        with tempfile.TemporaryDirectory() as tmp:
+            with controlled_legacy_baseline(Path(tmp)):
+                integrity = introspection.verify_legacy()
+        self.assertEqual(introspection.MANIFEST, original_manifest)
+        self.assertEqual(introspection.ROOT, original_root)
+        self.assertEqual(integrity["status"], "unchanged")
+        self.assertEqual(integrity["checked_file_count"], len(FIXTURE_BASELINE))
+        self.assertEqual((integrity["changed"], integrity["missing"]), ([], []))
+
+    def test_changed_or_missing_baseline_file_rejects_run_before_any_output(self):
+        """The integrity guard is never skipped; only its baseline is controlled here."""
+        for kind, kwargs in (("changed", {"break_fixture": "outputs/fixture_a.json"}),
+                             ("missing", {"remove_fixture": "outputs/fixture_b.json"})):
+            with self.subTest(kind), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                args = self.guard_args(root)
+                original_manifest = introspection.MANIFEST
+                with controlled_legacy_baseline(root, **kwargs) as fixture_root, \
+                     patch("urllib.request.urlopen", side_effect=AssertionError("Live HTTP forbidden")):
+                    integrity = introspection.verify_legacy()
+                    self.assertEqual(integrity["status"], "changed")
+                    self.assertEqual(integrity["checked_file_count"], len(FIXTURE_BASELINE))
+                    self.assertEqual(integrity[kind], [str(fixture_root / next(iter(kwargs.values())))])
+                    self.assertEqual(integrity["missing" if kind == "changed" else "changed"], [])
+                    with self.assertRaisesRegex(ValueError, "Legacy source hashes differ"):
+                        oracle.run(args, prepare=experiment.prepare_branch,
+                                   experiment=dict(profile=experiment.VERSION, arms=list(ARMS)),
+                                   input_names=experiment.INPUT_NAMES)
+                self.assertEqual(introspection.MANIFEST, original_manifest)
+                self.assertFalse(args.output_dir.exists())
 
 
 if __name__ == "__main__":

@@ -94,7 +94,7 @@ def task_explanation(task, nodes):
 
 def compact_sequence(run):
     e = optional(run / 'engineering_plan.json')
-    if not e:
+    if not e or not isinstance(e.get('plan'), dict):  # incomplete envelope: plan is null
         return []
     names = {'navigate_to_object':'接近/导航', 'position_arm_for_object':'机械臂准备', 'grasp_object':'抓取',
              'lift_held_object':'抬升', 'place_object_on_surface':'放置并释放'}

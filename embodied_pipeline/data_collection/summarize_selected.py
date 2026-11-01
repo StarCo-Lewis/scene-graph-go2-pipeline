@@ -7,6 +7,7 @@ import re
 import shutil
 
 from .batch import read, read_jsonl, write, jsonl, sha
+from .plan_artifact import has_complete
 from .quality import validate_record, duplicate_groups, content_hash
 
 VERSION = 'selected_scene_report_v1'
@@ -92,6 +93,7 @@ def summarize_selected(root, scenes=DEFAULT_SCENES, pilot_record_ids=()):
                           model_run=run.relative_to(root).as_posix() if run.exists() else None,
                           structural_quality=check, semantic_evaluation='pending', valid_candidate=None,
                           engineering_json_present=(run / 'engineering_plan.json').is_file(),
+                          engineering_plan_complete=has_complete(run / 'engineering_plan.json'),
                           http_response_present=bool(list((run / 'llm_response_audit').glob('*_http_*.json'))))
             record['collection_times'] = {
                 'source_scene_capture_time': task.get('source_scene_capture_time'),

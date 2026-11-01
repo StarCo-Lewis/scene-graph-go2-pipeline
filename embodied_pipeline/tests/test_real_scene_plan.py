@@ -36,6 +36,7 @@ class PlanningOnlyTests(unittest.TestCase):
             instruction="Navigate to table ID 179; do not manipulate objects.")
         if instruction_led:
             task["schema_version"] = smoke.INSTRUCTION_SCHEMA
+            task["scene_metadata_sha256"] = sha(source / "scene_metadata.json")
             del task["target_element_id"]
         path = Path(temp) / "task.json"
         write(path, task)
@@ -135,6 +136,32 @@ class PlanningOnlyTests(unittest.TestCase):
             write(path, task)
             with self.assertRaisesRegex(ValueError, "preselected reference"):
                 smoke.prepare(path, Path(temp) / "other")
+
+    def test_metadata_mutation_rejected_before_output(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.prepare(temp, instruction_led=True)
+            metadata = Path(temp) / "source/scene_metadata.json"
+            value = smoke.read(metadata)
+            value["scene_id"] = "changed_after_preparation"
+            write(metadata, value)
+            output = Path(temp) / "blocked"
+            with self.assertRaisesRegex(ValueError, "metadata hash mismatch"):
+                smoke.prepare(Path(temp) / "task.json", output)
+            self.assertFalse(output.exists())
+
+    def test_v1_and_missing_v2_hash_require_reprepare(self):
+        with tempfile.TemporaryDirectory() as temp:
+            self.prepare(temp, instruction_led=True)
+            path = Path(temp) / "task.json"
+            original = smoke.read(path)
+            for schema in ("real_scene_navigation_instruction_v1", smoke.INSTRUCTION_SCHEMA):
+                task = dict(original, schema_version=schema)
+                task.pop("scene_metadata_sha256")
+                write(path, task)
+                output = Path(temp) / "blocked"
+                with self.assertRaisesRegex(ValueError, "re-prepare"):
+                    smoke.prepare(path, output)
+                self.assertFalse(output.exists())
 
     def test_instruction_checks_grounding_and_single_navigation(self):
         task = {"schema_version": smoke.INSTRUCTION_SCHEMA, "instruction": "navigate to office machine(id13)"}

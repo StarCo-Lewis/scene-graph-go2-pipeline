@@ -105,6 +105,10 @@ class CollectionWorkerTests(unittest.TestCase):
             self.assertEqual(request.call_count, 1)
             self.assertEqual(result["status"], "engineering_json_generated_ungraded")
             self.assertEqual(result["action_count"], 2)
+            self.assertTrue(result["planning_completed"])
+            self.assertTrue(result["engineering_plan_file_written"])
+            self.assertEqual(result["artifact_completeness"], "complete")
+            self.assertTrue(result["engineering_json_generated"])
             self.assertTrue(result["collection_started_at_local"].endswith("+08:00"))
             self.assertTrue(result["collection_finished_at_local"].endswith("+08:00"))
             self.assertEqual(result["collection_started_at_utc"], worker.read(root / "attempt_started.json")["started_at_utc"])
@@ -113,12 +117,18 @@ class CollectionWorkerTests(unittest.TestCase):
             self.assertIsNone(envelope["coordinate_frame"])
             self.assertFalse(envelope["execution_ready"])
             self.assertEqual(envelope["plan"]["action_count"], 2)
+            self.assertEqual(envelope["artifact_completeness"], "complete")
+            self.assertTrue(envelope["planning_completed"])
+            self.assertNotIn("failed_stage", envelope)
             for name in ("static_review.json", "evaluation.json", "execution_feedback.json", "runtime_state.json"):
                 self.assertFalse((root / name).exists())
+            before = worker.sha(root / "engineering_plan.json")
             with patch.object(worker, "collect_alignment") as alignment:
                 with self.assertRaises(FileExistsError):
                     worker.run_task(self.args, self.task, source, root, Encoder())
                 alignment.assert_not_called()
+            # A rejected rerun never overwrites the earlier delivered result.
+            self.assertEqual(worker.sha(root / "engineering_plan.json"), before)
 
     def test_malformed_skill_output_kept_without_retry(self):
         def malformed(*args, **kwargs):
@@ -133,8 +143,19 @@ class CollectionWorkerTests(unittest.TestCase):
             self.assertEqual(request.call_count, 1)
             self.assertEqual(result["status"], "collection_stopped_at_stage_ungraded")
             self.assertTrue((root / "llm_matrix_proposal.json").is_file())
-            self.assertFalse((root / "engineering_plan.json").exists())
             self.assertFalse(result["failure_is_correctness_grade"])
+            # Failure still delivers an explicitly incomplete envelope; no steps are invented.
+            self.assertTrue(result["engineering_plan_file_written"])
+            self.assertFalse(result["planning_completed"])
+            self.assertFalse(result["engineering_json_generated"])
+            envelope = worker.read(root / "engineering_plan.json")
+            self.assertEqual(envelope["artifact_completeness"], "incomplete")
+            self.assertIsNone(envelope["plan"])
+            self.assertFalse(envelope["execution_ready"])
+            self.assertIn(envelope["failed_stage"], ("skill_matrix_normalization", "skill_matrix_decoding"))
+            self.assertEqual(envelope["partial_evidence"]["raw_skill_matrix_proposal"],
+                             worker.read(root / "llm_matrix_proposal.json"))
+            self.assertIn("skill_plan_missing", envelope["quality_flags"])
 
     def test_transport_failure_does_not_call_downstream(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -146,6 +167,10 @@ class CollectionWorkerTests(unittest.TestCase):
             self.assertEqual(result["failed_stage"], "decomposition_and_object_binding")
             self.assertFalse(result["engineering_json_generated"])
             self.assertTrue((root / "attempt_started.json").is_file())
+            envelope = worker.read(root / "engineering_plan.json")
+            self.assertEqual(envelope["artifact_completeness"], "incomplete")
+            self.assertEqual(envelope["error_type"], "TimeoutError")
+            self.assertIsNone(envelope["plan"])
 
     def test_missing_key_is_recorded_no_requests(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -155,6 +180,10 @@ class CollectionWorkerTests(unittest.TestCase):
                 result = worker.run_task(self.args, self.task, source, root, Encoder())
             alignment.assert_not_called()
             self.assertIn("no request made", result["error"])
+            self.assertEqual(result["failed_stage"], "credential_check")
+            envelope = worker.read(root / "engineering_plan.json")
+            self.assertEqual(envelope["artifact_completeness"], "incomplete")
+            self.assertEqual(envelope["response_evidence"]["local_request_records"], 0)
 
     def test_claim_alone_prevents_unknown_outcome_resubmission(self):
         with tempfile.TemporaryDirectory() as temp:

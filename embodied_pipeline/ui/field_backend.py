@@ -42,7 +42,8 @@ def load_scene(folder):
         raise ValueError("Empty scene")
     return {"folder": folder, "metadata": metadata, "nodes": nodes,
             "graph_hash": sha(folder / "scene_graph.json"),
-            "edges_hash": sha(folder / "scene_graph_edges.json")}
+            "edges_hash": sha(folder / "scene_graph_edges.json"),
+            "metadata_hash": sha(folder / "scene_metadata.json")}
 
 
 def wsl_path(path):
@@ -65,7 +66,8 @@ def create_task(scene, instruction, navigation_mode="single_goal"):
     if navigation_mode not in ("single_goal", "ordered_goals"):
         raise ValueError("Unsupported navigation mode")
     if (sha(scene["folder"] / "scene_graph.json") != scene["graph_hash"] or
-            sha(scene["folder"] / "scene_graph_edges.json") != scene["edges_hash"]):
+            sha(scene["folder"] / "scene_graph_edges.json") != scene["edges_hash"] or
+            sha(scene["folder"] / "scene_metadata.json") != scene.get("metadata_hash")):
         raise ValueError("Scene changed; reload it before preparing a task")
     folder = ROOT / "outputs/real_scene_runs" / ("field_ui_" + datetime.now().strftime("%Y%m%d_%H%M%S_") + uuid.uuid4().hex[:8])
     folder.mkdir(parents=True, exist_ok=False)
@@ -73,9 +75,10 @@ def create_task(scene, instruction, navigation_mode="single_goal"):
         scene_path = scene["folder"].relative_to(ROOT).as_posix()
     except ValueError:
         scene_path = wsl_path(scene["folder"])
-    task = {"schema_version": "real_scene_navigation_instruction_v1", "task_id": folder.name,
+    task = {"schema_version": "real_scene_navigation_instruction_v2", "task_id": folder.name,
             "scene_dir": scene_path, "scene_graph_sha256": scene["graph_hash"],
-            "scene_edges_sha256": scene["edges_hash"], "instruction": instruction,
+            "scene_edges_sha256": scene["edges_hash"],
+            "scene_metadata_sha256": scene["metadata_hash"], "instruction": instruction,
             "target_authority": "user_instruction_via_llm_object_binding",
             "navigation_mode": navigation_mode,
             "evaluation_scope": "Instruction-led ordered navigation; proposal only, no dispatch.",

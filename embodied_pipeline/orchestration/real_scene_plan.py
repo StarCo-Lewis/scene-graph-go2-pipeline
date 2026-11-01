@@ -13,6 +13,7 @@ from types import SimpleNamespace
 
 from .._legacy import ROOT, load
 from .. import planning, instruction_skills as skills, validation
+from ..validation import plan_semantics
 from ..perception.real_rgbd import sha, write
 from ..perception.conceptgraphs_scene import load_real_scene
 
@@ -20,7 +21,7 @@ TASK = ROOT / "embodied_pipeline/perception/d3_619_navigation_smoke.json"
 LIBRARY = ROOT / "outputs/quadruped_atomic_skill_library.v0.1.json"
 SKILLS = ("navigate_to_object", "position_arm_for_object", "grasp_object",
           "lift_held_object", "place_object_on_surface")
-INSTRUCTION_SCHEMA = "real_scene_navigation_instruction_v1"
+INSTRUCTION_SCHEMA = "real_scene_navigation_instruction_v2"
 ORDERED_GOAL_POLICY = (
     " Temporal goal contract ordered_navigation_terminal_v1: goal_state means conditions that must "
     "hold at the END of the entire task, not a list of every visited destination. For 'visit A then B', "
@@ -40,9 +41,16 @@ def read(path):
 
 def prepare(task_path, root):
     task = read(task_path)
+    if task.get("schema_version") == "real_scene_navigation_instruction_v1":
+        raise ValueError("Unbound instruction-v1 task; re-prepare with real_scene_navigation_instruction_v2")
     if task.get("schema_version") not in ("real_scene_navigation_smoke_v1", INSTRUCTION_SCHEMA):
         raise ValueError("Unsupported smoke task schema")
     instruction_led = task["schema_version"] == INSTRUCTION_SCHEMA
+    if instruction_led:
+        expected_metadata = task.get("scene_metadata_sha256")
+        if (not isinstance(expected_metadata, str) or len(expected_metadata) != 64 or
+                any(c not in "0123456789abcdef" for c in expected_metadata)):
+            raise ValueError("Instruction-v2 requires preparation-time scene_metadata_sha256; re-prepare task")
     if task.get("navigation_mode", "single_goal") not in ("single_goal", "ordered_goals"):
         raise ValueError("Unsupported navigation mode")
     if instruction_led and "target_element_id" in task:
@@ -55,6 +63,8 @@ def prepare(task_path, root):
     if (hashes["scene_graph.json"] != task["scene_graph_sha256"] or
             hashes["scene_graph_edges.json"] != task["scene_edges_sha256"]):
         raise ValueError("Task belongs to a different graph revision; review task before running")
+    if instruction_led and hashes["scene_metadata.json"] != expected_metadata:
+        raise ValueError("Task metadata hash mismatch; re-prepare task before running")
     bundle = load_real_scene(source)
     target = None
     if not instruction_led:
@@ -166,6 +176,12 @@ def generate(args, root, task, bundle, library, summary, encoder):
     options = SimpleNamespace(**dict(vars(args), output_dir=root,
         alignment_wire_format="matrix", matrix_contract="typed5_schema", alignment_validation_attempts=1))
     alignment = planning.decompose_and_bind(options, {"instruction": task["instruction"]}, summary)
+    audit = plan_semantics.audit(alignment["task_decomposition"],
+                                 bindings=alignment.get("context_bindings"),
+                                 instruction=task["instruction"])
+    write(root / "decomposition_audit.json", audit)
+    summary["decomposition_audit"] = {k: audit[k] for k in
+                                      ("version", "passed", "has_defect", "issue_codes")}
     summary["stage"] = "full_skill_inventory"
     summary["candidate_policy"] = "full_inventory_no_cosine_v1"
     print("[REAL SCENE PLAN] START full skill inventory and skill matrix (cosine disabled)", flush=True)
@@ -193,6 +209,12 @@ def generate(args, root, task, bundle, library, summary, encoder):
     summary["stage"] = "static_review_not_execution"
     check = check_navigation(plan, task, bundle, alignment)
     write(root / "task_output_check.json", check)
+    audit = plan_semantics.audit(alignment["task_decomposition"],
+                                 bindings=alignment.get("context_bindings"), plan=plan,
+                                 instruction=task["instruction"])
+    write(root / "decomposition_audit.json", audit)
+    summary["decomposition_audit"] = {k: audit[k] for k in
+                                      ("version", "passed", "has_defect", "issue_codes")}
     review = load("verify_plan").review(alignment, plan, library, bundle["nodes"], bundle["edges"])
     write(root / "static_review.json", review)
     # Review may examine an optimized copy. Never export that copy as the model's plan.
@@ -204,6 +226,8 @@ def generate(args, root, task, bundle, library, summary, encoder):
         "source_graph_sha256": task["scene_graph_sha256"],
         "source_edges_sha256": task["scene_edges_sha256"],
         "plan": copy.deepcopy(plan), "task_output_check": check,
+        "decomposition_audit": audit,
+        "quality_flags": audit["defect_codes"],
         "static_review_status": review["status"],
         "geometry_contract": "Resolve bound element IDs in the source graph. Object bbox centre is NOT a collision-free navigation goal pose.",
         "required_before_dispatch": ["Register actual robot pose and map TF", "Choose and validate a collision-free approach pose",
@@ -215,7 +239,8 @@ def generate(args, root, task, bundle, library, summary, encoder):
     initial_checks = review.get("observed_state", {}).get("initial_claim_checks", [])
     initial_problem = any(c.get("required", True) and c.get("status") not in
                           ("observed_true", "true") for c in initial_checks)
-    passed = check["passed"] and review["status"] == "conditionally_valid_symbolic_plan" and not initial_problem
+    passed = (check["passed"] and review["status"] == "conditionally_valid_symbolic_plan"
+              and not initial_problem and not audit["has_defect"])
     summary.update(status="planning_json_generated_not_executed" if passed else "planning_output_requires_review",
         action_count=plan["action_count"], task_check_passed=check["passed"],
         static_review_status=review["status"], initial_claims_require_review=initial_problem,

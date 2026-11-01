@@ -11,6 +11,7 @@ import shutil
 from . import batch
 from .batch import read,read_jsonl,write,jsonl,sha
 from .context_contract import VERSION as CONTEXT_VERSION,public_context
+from .plan_artifact import has_complete
 from .resources import audit_graph
 from .._legacy import ROOT
 
@@ -113,15 +114,21 @@ def summarize(root):
                   collection_started_at_utc=saved.get('collection_started_at_utc'),collection_finished_at_utc=saved.get('collection_finished_at_utc'))
             elif (folder/'harness_error.json').is_file():item.update(status='task_harness_error_ungraded',harness_error=read(folder/'harness_error.json'))
             elif folder.exists():item['status']='started_no_final_summary_do_not_replay'
-            if (folder/'engineering_plan.json').exists():
+            if (folder/'engineering_plan.json').is_file():
+                # Deliver every envelope, including stopped attempts; completeness is a separate label.
                 dest=root/'engineering_json'/scene/(task['record_id']+'.json');dest.parent.mkdir(parents=True,exist_ok=True)
                 shutil.copy2(folder/'engineering_plan.json',dest)
                 item['engineering_json']=str(dest)
+                item['engineering_json_complete']=has_complete(folder/'engineering_plan.json')
             rows.append(item)
         counts[scene]=dict(Counter(x['status'] for x in rows));results+=rows
     jsonl(root/'results.ungraded.jsonl',results)
     write(root/'collection_summary.json',{'version':VERSION,'records':len(results),'scenes':counts,
-       'engineering_json_count':sum('engineering_json' in r for r in results),'semantic_correctness_evaluated':False,
+       'engineering_json_count':sum('engineering_json' in r for r in results),
+       'complete_engineering_json_count':sum(r.get('engineering_json_complete') is True for r in results),
+       'incomplete_engineering_json_count':sum(r.get('engineering_json_complete') is False for r in results),
+       'engineering_json_count_meaning':'All delivered envelopes, including incomplete stopped attempts; see complete_engineering_json_count.',
+       'semantic_correctness_evaluated':False,
        'protocol_note':config['clarification_policy'],'updated_at_utc':datetime.now(timezone.utc).isoformat()})
     print(json.dumps({'scene_status_counts':counts,'engineering_json_count':sum('engineering_json' in r for r in results)},ensure_ascii=False))
 

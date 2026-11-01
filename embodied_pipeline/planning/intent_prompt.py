@@ -1,6 +1,7 @@
 """Task-agnostic prompt treatment; no case answers or private references."""
 
-VERSION = "complete_intent_relevant_constraints_v1"
+# v2: rule 7, ordered visits keep intermediate destinations out of final goals.
+VERSION = "complete_intent_relevant_constraints_v2"
 ARMS = ("baseline_prompt", "intent_constraints_prompt")
 
 ADDENDUM = """
@@ -36,6 +37,15 @@ used only by a constraint remains valid and requires no artificial action.
 requirements and agree with the current input state. Preserve unknown facts as
 unknown. A successful transport goal does not establish any unobserved effect
 such as contents, drinkability, or satisfaction of a human need.
+7. For ordered navigation such as 'visit A, then B', keep each visit as its own
+ordered task with a dependency on the preceding visit, but put only the robot
+near the last destination in the final conditions of the constraint table.
+Earlier visits are intermediate milestones completed by their own task; do not
+also keep them as final robot-near conditions, because the robot cannot end the
+task near several separate destinations. For a return such as A, then B, then
+A, keep all three visits as ordered tasks and require only robot near A at the
+end. Do not drop a requested visit or invent a visited relation; ask for
+clarification when explicitly requested final conditions conflict.
 """
 
 

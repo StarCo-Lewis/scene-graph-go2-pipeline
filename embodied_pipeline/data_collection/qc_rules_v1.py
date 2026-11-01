@@ -9,6 +9,7 @@ import argparse
 import re
 
 from .batch import read, read_jsonl, write, jsonl, sha
+from .plan_artifact import has_complete
 
 SCENES = ('scene200', 'scene202', 'd3_619')
 
@@ -185,14 +186,16 @@ def run_audit(root):
         for task in read_jsonl(root / 'cases' / scene / 'tasks.jsonl'):
             rid = task['record_id']
             run = root / 'cases' / scene / 'tasks' / rid / 'model_run'
-            if not (run / 'engineering_plan.json').exists():
+            # Scoring covers complete plans only; incomplete envelopes stay listed here, never dropped.
+            if not has_complete(run / 'engineering_plan.json'):
                 summary = read(run / 'planning_summary.json') if (run / 'planning_summary.json').exists() else {}
                 missing.append({'record_id': rid, 'scene_id': scene, 'instruction': task['instruction'],
+                                'engineering_plan_file_present': (run / 'engineering_plan.json').is_file(),
                                 'status': summary.get('status'), 'stage': summary.get('stage'),
                                 'error_type': summary.get('error_type'), 'error': summary.get('error'),
                                 'failed_stage': summary.get('failed_stage'),
                                 'errors': summary.get('errors'), 'summary_path': (run / 'planning_summary.json').relative_to(root).as_posix(),
-                                'total_score': None, 'reason': 'No engineering JSON; outside the complete-file score denominator.'})
+                                'total_score': None, 'reason': 'No complete engineering plan (file missing or incomplete envelope); outside the complete-file score denominator.'})
             else:
                 output.append(audit_record(root, scene, rid))
     dest = root / 'reports/quality_check_v1'

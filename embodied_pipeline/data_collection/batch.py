@@ -598,7 +598,8 @@ def summarize(root):
     root = Path(root)
     statuses, scene_counts, dataset = Counter(), {}, []
     refs, checks_all, dimensions = {}, [], {}
-    raw_records = plans = started = 0
+    from .plan_artifact import has_complete
+    raw_records = plans = plan_files = started = 0
     for tasks_path in sorted((root / 'cases').glob('*/tasks.jsonl')):
         scene, counts = tasks_path.parent.name, Counter()
         graph_path = tasks_path.parent / 'graph/scene_graph.json'
@@ -626,7 +627,9 @@ def summarize(root):
                 status = harness_error.get('status', 'task_harness_error_ungraded')
             raw = list((run / 'llm_response_audit').glob('*_http_*.json'))
             raw_records += bool(raw)
-            plans += (run / 'engineering_plan.json').is_file()
+            # Every claimed task now writes engineering_plan.json; count complete plans separately.
+            plan_files += (run / 'engineering_plan.json').is_file()
+            plans += has_complete(run / 'engineering_plan.json')
             ref_path = run.parent / 'reference.json'
             reference = read(ref_path) if ref_path.is_file() else None
             refs[task['record_id']] = reference
@@ -705,7 +708,8 @@ def summarize(root):
     write(root / 'quality_report.json', {'version': VERSION,
         'updated_at_utc': datetime.now(timezone.utc).isoformat(), 'catalogue_records': len(dataset),
         'started_records': started, 'records_with_http_response': raw_records,
-        'engineering_json_count_ungraded': plans, 'status_counts': dict(statuses),
+        'engineering_json_count_ungraded': plans, 'engineering_plan_file_count_incl_incomplete': plan_files,
+        'status_counts': dict(statuses),
         'scene_counts': scene_counts, 'exact_duplicate_records': sum(n-1 for n in exact.values() if n>1),
         'stratified_counts': dimensions, 'raw_task_records_before_output_filtering': len(dataset),
         'records_retained_after_output_filtering': len(dataset), 'records_removed': 0,
